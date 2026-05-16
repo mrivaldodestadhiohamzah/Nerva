@@ -1,0 +1,462 @@
+import { authenticatedApiCall, isAuthenticated } from '../config.js';
+import { renderHistoryDetail } from './historyDetailPresenter.js';
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatPercent(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? `${Math.round(numeric)}%` : 'Tidak tersedia';
+}
+
+function formatConfidence(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 'Tidak tersedia';
+  return formatPercent(numeric > 1 ? numeric : numeric * 100);
+}
+
+export function renderHistory() {
+  fetch("views/historyView.html")
+    .then((res) => {
+      if (!res.ok) throw new Error("Gagal memuat historyView.html");
+      return res.text();
+    })
+    .then((html) => {
+      document.getElementById("app").innerHTML = html;
+      console.log("History view loaded, initializing...");
+      initializeHistory();
+    })
+    .catch((err) => {
+      console.error("Error loading history view:", err);
+      document.getElementById("app").innerHTML = `
+        <div class="p-4 text-center">
+          <h2 class="text-xl font-bold text-red-600">Gagal Memuat Riwayat</h2>
+          <p class="text-gray-600">Gagal memuat halaman riwayat: ${err.message}</p>
+        </div>
+      `;
+    });
+}
+
+class HistoryPresenter {
+  constructor(view) {
+    this.view = view;
+    this.allHistory = [];
+    this.filteredHistory = {};
+  }
+
+  async loadHistory() {
+    if (!isAuthenticated()) {
+      if (window.loadView) {
+        window.loadView('login');
+        return;
+      }
+
+      this.view.renderError('Silakan masuk untuk melihat riwayat Anda.');
+      return;
+    }
+
+    try {
+      this.view.showLoading();
+      const history = await authenticatedApiCall("/api/history");
+      this.allHistory = history;
+      const groupedFeedbacks = this.groupFeedbacksByPeriod(history);
+      this.filteredHistory = groupedFeedbacks;
+      this.view.renderHistory(groupedFeedbacks);
+      this.setupFilterListener();
+    } catch (error) {
+      console.error('Failed to load feedback history:', error);
+      this.view.renderError('Gagal memuat data riwayat. Silakan coba lagi.');
+    }
+  }
+
+  setupFilterListener() {
+    const filterDropdown = document.getElementById('filterDropdown');
+    if (filterDropdown) {
+      filterDropdown.addEventListener('change', (e) => {
+        this.filterHistory(e.target.value);
+      });
+    }
+  }
+
+  groupFeedbacksByPeriod(feedbacks) {
+    const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
+    const today = new Date(now);
+    const yesterday = new Date(now);
+    yesterday.setDate(today.getDate() - 1);
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+    startOfWeek.setHours(0, 0, 0, 0);
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+
+    const grouped = {
+      today: [],
+      thisWeek: [],
+      lastMonth: [],
+      earlierThisYear: [],
+      lastYear: [],
+    };
+
+    feedbacks.forEach(feedback => {
+      let feedbackDate;
+      if (typeof feedback.created_at === 'string' && feedback.created_at.includes(' ')) {
+        feedbackDate = new Date(feedback.created_at + ' UTC');
+        feedbackDate = new Date(feedbackDate.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+      } else {
+        feedbackDate = new Date(new Date(feedback.created_at).toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+      }
+      if (feedbackDate.getFullYear() === today.getFullYear() &&
+          feedbackDate.getMonth() === today.getMonth() &&
+          feedbackDate.getDate() === today.getDate()) {
+        grouped.today.push(feedback);
+      } else if (feedbackDate >= startOfWeek && feedbackDate <= today) {
+        grouped.thisWeek.push(feedback);
+      } else if (feedbackDate.getFullYear() === currentYear && feedbackDate.getMonth() === currentMonth - 1) {
+        grouped.lastMonth.push(feedback);
+      } else if (feedbackDate.getFullYear() === currentYear) {
+        grouped.earlierThisYear.push(feedback);
+      } else if (feedbackDate.getFullYear() === currentYear - 1) {
+        grouped.lastYear.push(feedback);
+      } else {
+        const yearKey = feedbackDate.getFullYear().toString();
+        if (!grouped[yearKey]) {
+          grouped[yearKey] = [];
+        }
+        grouped[yearKey].push(feedback);
+      }
+    });
+
+    return grouped;
+  }
+
+  filterHistory(filterValue) {
+    console.log('Filtering by:', filterValue);
+    if (filterValue === 'all') {
+      this.view.renderHistoryContent(this.filteredHistory);
+    } else {
+      const filtered = {};
+      if (this.filteredHistory[filterValue] && this.filteredHistory[filterValue].length > 0) {
+        filtered[filterValue] = this.filteredHistory[filterValue];
+      }
+      this.view.renderHistoryContent(filtered);
+    }
+    this.setupFilterListener();
+    const filterDropdown = document.getElementById('filterDropdown');
+    if (filterDropdown) {
+      filterDropdown.value = filterValue;
+    }
+  }
+
+  getHistoryItem(historyId) {
+    return this.allHistory.find(item => item.history_id === historyId);
+  }
+
+  searchHistory(searchTerm) {
+    const searchResults = this.allHistory.filter(item =>
+      item.text && item.text.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    const groupedResults = this.groupFeedbacksByPeriod(searchResults);
+    this.view.renderHistoryContent(groupedResults);
+  }
+
+  showDetail(historyId) {
+    console.log('showDetail called with historyId:', historyId);
+    renderHistoryDetail(historyId);
+  }
+}
+
+class HistoryView {
+  constructor() {
+    this.container = null;
+    this.presenter = null;
+  }
+
+  showLoading() {
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <main class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-10">
+        <div class="flex justify-center items-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-700"></div>
+          <span class="ml-3 text-gray-600">Memuat riwayat...</span>
+        </div>
+      </main>
+    `;
+  }
+
+  renderHistory(groupedFeedbacks) {
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <main class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-10 xl:py-20">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <h1 class="text-2xl font-bold text-gray-600">Riwayat Anda</h1>
+          <div class="w-full sm:w-64 lg:w-48">
+            <select id="filterDropdown" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-700 focus:border-transparent bg-white text-gray-500 text-sm">
+              <option value="all">Semua Waktu</option>
+              <option value="today">Hari Ini</option>
+              <option value="thisWeek">Minggu Ini</option>
+              <option value="lastMonth">Bulan Lalu</option>
+              <option value="earlierThisYear">Awal Tahun Ini</option>
+              <option value="lastYear">Tahun Lalu</option>
+            </select>
+          </div>
+        </div>
+        <div id="historyContainer"></div>
+      </main>
+    `;
+    this.renderHistoryContent(groupedFeedbacks);
+  }
+
+  renderHistoryContent(groupedFeedbacks) {
+    const container = document.getElementById('historyContainer');
+    if (!container) return;
+    this.container = container;
+    container.innerHTML = '';
+
+    const sections = [
+      { key: 'today', label: 'Hari Ini' },
+      { key: 'thisWeek', label: 'Minggu Ini' },
+      { key: 'lastMonth', label: 'Bulan Lalu' },
+      { key: 'earlierThisYear', label: 'Awal Tahun Ini' },
+      { key: 'lastYear', label: 'Tahun Lalu' },
+      ...Object.keys(groupedFeedbacks)
+        .filter(key => !['today', 'thisWeek', 'lastMonth', 'earlierThisYear', 'lastYear'].includes(key))
+        .sort((a, b) => b - a)
+        .map(year => ({ key: year, label: year })),
+    ];
+
+    let hasContent = false;
+
+    sections.forEach((section, index) => {
+      const data = groupedFeedbacks[section.key];
+      if (data && data.length > 0) {
+        hasContent = true;
+        const sectionId = `history-${section.key.toLowerCase().replace(/\s/g, '-')}`;
+        const sectionHtml = `
+          <div class="${index > 0 ? 'mt-12' : ''}">
+            <h2 class="text-2xl font-semibold text-gray-600 mb-6">${section.label}</h2>
+            <div id="${sectionId}" class="grid gap-4 md:gap-6"></div>
+          </div>
+        `;
+        container.insertAdjacentHTML('beforeend', sectionHtml);
+        this.renderSection(sectionId, data);
+      }
+    });
+
+    if (!hasContent) {
+      container.innerHTML = `
+        <div class="text-center py-12">
+          <div class="text-gray-400 mb-4">
+            <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </div>
+          <p class="text-gray-500 text-lg">Tidak ada riwayat pada periode ini.</p>
+          <p class="text-gray-400 text-sm mt-2">Coba pilih periode lain atau periksa kembali nanti.</p>
+        </div>
+      `;
+    }
+  }
+
+  renderSection(containerId, data) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (data.length === 0) {
+      container.innerHTML = '<p class="text-gray-500 italic">Belum ada data untuk ditampilkan.</p>';
+      return;
+    }
+
+    data.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'bg-white shadow-md rounded-xl p-4 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-100';
+      card.dataset.historyId = item.history_id;
+
+      const stressPercentage = this.toPercent(item.stress_percent);
+      const stressLevel = item.stress_level || 'tidak diketahui';
+      const text = item.text || 'Tidak ada deskripsi';
+      const date = new Date(new Date(item.created_at).toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+      const fusionSummary = this.createFusionSummary(item);
+
+      card.innerHTML = `
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-4 min-w-0">
+            <div class="flex-shrink-0">
+              ${this.createDonutChart(stressPercentage)}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-center gap-2 mb-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${this.getStressLevelClass(stressLevel)}">
+                  Stres ${this.formatStressLevel(stressLevel)}
+                </span>
+              </div>
+              <p class="text-sm text-gray-500 mb-2">${this.formatDate(date)}</p>
+              <p class="text-gray-700 text-sm line-clamp-2 break-words">${escapeHtml(text)}</p>
+              ${fusionSummary}
+            </div>
+          </div>
+          <div class="flex-shrink-0 self-end sm:self-center sm:ml-4">
+            <svg class="w-6 h-6 text-violet-700 cursor-pointer detail-button" fill="none" stroke="currentColor" viewBox="0 0 24 24" data-history-id="${item.history_id}">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+
+    this.attachDetailButtonListeners(containerId);
+  }
+
+  attachDetailButtonListeners(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const detailButtons = container.querySelectorAll('.detail-button');
+    detailButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const historyId = button.dataset.historyId;
+        console.log('Detail button clicked for history ID:', historyId);
+        this.presenter.showDetail(historyId);
+      });
+    });
+  }
+
+  renderError(message) {
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <main class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-10">
+        <div class="text-center py-12">
+          <div class="text-red-400 mb-4">
+            <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+          </div>
+          <p class="text-red-500 text-lg">${message}</p>
+          <button onclick="window.location.reload()" class="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
+            Coba Lagi
+          </button>
+        </div>
+      </main>
+    `;
+  }
+
+  createDonutChart(percentage) {
+    const radius = (64 - 8) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDasharray = circumference;
+    const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+    let strokeColor = '#10b981';
+    if (percentage > 33 && percentage <= 66) {
+      strokeColor = '#f59e0b';
+    } else if (percentage > 66) {
+      strokeColor = '#ef4444';
+    }
+
+    return `
+      <div class="relative" style="width: 64px; height: 64px;">
+        <svg width="64" height="64" class="transform -rotate-90">
+          <circle cx="32" cy="32" r="${radius}" fill="none" stroke="#e5e7eb" stroke-width="4" />
+          <circle cx="32" cy="32" r="${radius}" fill="none" stroke="${strokeColor}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${strokeDasharray}" stroke-dashoffset="${strokeDashoffset}" class="transition-all duration-300 ease-in-out" />
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="text-gray-700 font-bold text-xs">${percentage.toFixed(1)}%</span>
+        </div>
+      </div>
+    `;
+  }
+
+  getStressLevelClass(level) {
+    const key = String(level || '').toLowerCase();
+    const classes = {
+      'Low': 'bg-green-100 text-green-800',
+      'Medium': 'bg-yellow-200 text-yellow-800',
+      'High': 'bg-red-100 text-red-800',
+      'low': 'bg-green-100 text-green-800',
+      'medium': 'bg-yellow-200 text-yellow-800',
+      'high': 'bg-red-100 text-red-800',
+      'rendah': 'bg-green-100 text-green-800',
+      'sedang': 'bg-yellow-200 text-yellow-800',
+      'tinggi': 'bg-red-100 text-red-800',
+    };
+    return classes[level] || classes[key] || 'bg-gray-100 text-gray-800';
+  }
+
+  toPercent(value) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? Math.round(numeric * 10) / 10 : 0;
+  }
+
+  formatStressLevel(level) {
+    const normalized = String(level || '').toLowerCase();
+    const labels = {
+      rendah: 'Rendah',
+      sedang: 'Sedang',
+      tinggi: 'Tinggi',
+      low: 'Rendah',
+      medium: 'Sedang',
+      high: 'Tinggi',
+    };
+    return labels[normalized] || this.capitalizeFirst(String(level || 'Tidak diketahui'));
+  }
+
+  createFusionSummary(item) {
+    const fusion = item.fusion || item.metadata?.fusion;
+    const dass21 = item.dass21 || item.metadata?.dass21;
+    const curhat = item.curhat_result || item.metadata?.curhat;
+
+    if (!fusion && !dass21 && !curhat) {
+      return '';
+    }
+
+    const mlConfidence = fusion?.mlConfidence ?? curhat?.confidence;
+    return `
+      <div class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-gray-600">
+        <span class="rounded-md bg-gray-50 px-2 py-1">DASS ${formatPercent(dass21?.stressPercent ?? fusion?.dassStressPercent)}</span>
+        <span class="rounded-md bg-gray-50 px-2 py-1">Curhat ${formatPercent(curhat?.stressPercent ?? fusion?.mlStressPercent)}</span>
+        <span class="rounded-md bg-violet-50 px-2 py-1 text-violet-800">Bobot ${formatPercent(fusion?.dassWeight)}/${formatPercent(fusion?.curhatWeight ?? fusion?.mlWeight)}</span>
+      </div>
+    `;
+  }
+
+
+  capitalizeFirst(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  formatDate(date) {
+    const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+    const diffTime = Math.abs(today - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      return 'Hari ini pukul ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays === 2) {
+      return 'Kemarin pukul ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays <= 7) {
+      return date.toLocaleDateString('id-ID', { weekday: 'long' }) + ' pukul ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } else {
+      return date.toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  }
+}
+
+const view = new HistoryView();
+view.presenter = new HistoryPresenter(view);
+
+function initializeHistory() {
+  view.presenter.loadHistory();
+}
+
+export { HistoryPresenter, HistoryView, view };

@@ -1,0 +1,46 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.vite/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+server-test*.log
+
+# Local runtimes and caches
+.venv/
+.python/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.cache/
+.turbo/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Supabase/local tooling secrets and state
+.supabase/
+supabase/.branches/
+supabase/.temp/
