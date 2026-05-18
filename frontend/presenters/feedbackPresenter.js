@@ -1,4 +1,5 @@
 import { renderPageLoading } from '../utils/loading.js';
+import { API_BASE_URL } from '../config.js';
 
 export function renderFeedback() {
   document.getElementById("app").innerHTML = renderPageLoading(
@@ -412,7 +413,7 @@ function buildFusionDetails(result) {
 export class FeedbackPresenter {
   async getFeedbackHistory() {
     try {
-      const response = await fetch("http://localhost:5001/api/submissions");
+      const response = await fetch(`${API_BASE_URL}/api/submissions`);
       if (!response.ok) throw new Error("Gagal mengambil riwayat masukan");
       return await response.json();
     } catch (err) {

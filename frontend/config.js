@@ -1,10 +1,8 @@
 // Enhanced config.js with better error handling, debugging, and authentication
-const configuredApiBaseUrl = import.meta.env?.VITE_API_BASE_URL?.trim();
-const apiHost = typeof window !== 'undefined' && window.location.hostname
-  ? window.location.hostname
-  : 'localhost';
+const DEFAULT_API_BASE_URL = 'https://hiddenmood-backend-production.up.railway.app';
+const configuredApiBaseUrl = import.meta.env?.VITE_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL;
 
-export const API_BASE_URL = (configuredApiBaseUrl || `http://${apiHost}:5001`).replace(/\/$/, '');
+export const API_BASE_URL = configuredApiBaseUrl.replace(/\/$/, '');
 const DEFAULT_API_TIMEOUT_MS = 90000;
 
 // List of endpoints that do not require authentication
