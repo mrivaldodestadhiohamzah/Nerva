@@ -23,8 +23,14 @@ const PORT = process.env.PORT || 5001;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const defaultAllowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'https://himorgd.vercel.app',
+];
+
 const allowedOrigins = new Set(
-  (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000')
+  (process.env.ALLOWED_ORIGINS || defaultAllowedOrigins.join(','))
     .split(',')
     .map(origin => origin.trim())
     .filter(Boolean)
