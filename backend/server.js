@@ -1,9 +1,10 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { projectRootDir } from "./utils/env.js";
+import { backendRootDir, frontendRootDir } from "./utils/env.js";
 
 import profileRoutes from "./routes/profile.js";
 import authRoutes from "./routes/auth.js";
@@ -47,12 +48,15 @@ app.use(express.json({ limit: "25kb" }));
 app.use(express.urlencoded({ extended: true, limit: "25kb" }));
 app.use(sanitizeRequestBody);
 app.use("/api", createRateLimiter({ max: 100, windowMs: 60 * 1000 }));
-app.use('/presenters', express.static(path.join(projectRootDir, 'presenters')));
-app.use('/views', express.static(path.join(projectRootDir, 'views')));
-app.use('/assets', express.static(path.join(projectRootDir, 'assets')));
+
+if (fs.existsSync(frontendRootDir)) {
+  app.use('/presenters', express.static(path.join(frontendRootDir, 'presenters')));
+  app.use('/views', express.static(path.join(frontendRootDir, 'views')));
+  app.use('/assets', express.static(path.join(frontendRootDir, 'assets')));
+}
 
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "../views"));
+app.set("views", path.join(backendRootDir, "views"));
 
 app.get("/", (req, res) => {
   res.json({

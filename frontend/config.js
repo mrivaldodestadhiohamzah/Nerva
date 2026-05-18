@@ -1,9 +1,10 @@
 // Enhanced config.js with better error handling, debugging, and authentication
+const configuredApiBaseUrl = import.meta.env?.VITE_API_BASE_URL?.trim();
 const apiHost = typeof window !== 'undefined' && window.location.hostname
   ? window.location.hostname
   : 'localhost';
 
-export const API_BASE_URL = `http://${apiHost}:5001`;
+export const API_BASE_URL = (configuredApiBaseUrl || `http://${apiHost}:5001`).replace(/\/$/, '');
 
 // List of endpoints that do not require authentication
 const UNAUTHENTICATED_ENDPOINTS = [

@@ -384,7 +384,7 @@ router.get("/history", authenticateToken, async (req, res) => {
       .from('history')
       .select('*')
       .eq('user_id', req.user.user_id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false, nullsFirst: false });
 
     if (error) throw error;
 

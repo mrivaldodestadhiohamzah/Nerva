@@ -25,7 +25,7 @@
     </header>
 
     <main class="max-w-4xl mx-auto px-4 py-8">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-10" data-aos="fade-up" data-aos-duration="600">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-10" data-aos="fade-up" data-aos-duration="550">
             <section>
                 <h2 class="text-2xl font-semibold text-gray-900 mb-4">1. Pengantar</h2>
                 <div class="text-gray-700 leading-relaxed space-y-4">
@@ -130,9 +130,12 @@
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script>
         AOS.init({
-            duration: 600,
+            duration: 550,
+            delay: 0,
             easing: 'ease-out-cubic',
-            once: true
+            once: true,
+            mirror: false,
+            offset: 120
         });
     </script>
 </body>

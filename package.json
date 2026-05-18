@@ -1,16 +1,25 @@
 {
   "name": "hiddenmood",
   "version": "1.0.0",
-  "main": "app.js",
+  "private": true,
+  "main": "backend/server.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "node app.js",
-    "server": "node backend/server.js"
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "start": "node backend/server.js",
+    "server": "node backend/server.js",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "backend:start": "npm --prefix backend start",
+    "backend:test:weights": "npm --prefix backend run test:weights"
   },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "author": "",
   "license": "ISC",
   "description": "",

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { calculateDynamicFusion } from "../backend/utils/dynamicWeighting.js";
+import { calculateDynamicFusion } from "../utils/dynamicWeighting.js";
 
 function runScenario({
   name,

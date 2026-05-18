@@ -4,6 +4,9 @@ export function renderHome() {
     .then(html => {
       document.getElementById('app').innerHTML = html;
       setupStartButton();
+      if (window.AOS) {
+        window.requestAnimationFrame(() => window.AOS.refreshHard());
+      }
     });
 }
 

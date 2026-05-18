@@ -231,7 +231,44 @@ async function fetchUserProfile() {
     }
 }
 
-window.loadView = function (view) {
+function normalizeSectionTarget(sectionTarget) {
+    if (!sectionTarget) return null;
+
+    const aliases = {
+        about: 'visi-misi',
+        tentang: 'visi-misi',
+        visi: 'visi-misi',
+        'visi-misi': 'visi-misi',
+        contact: 'contact',
+        kontak: 'contact',
+        footer: 'contact',
+    };
+
+    return aliases[String(sectionTarget).toLowerCase()] || String(sectionTarget);
+}
+
+function scrollToPageSection(sectionTarget) {
+    const targetId = normalizeSectionTarget(sectionTarget);
+    if (!targetId) return;
+
+    requestAnimationFrame(() => {
+        window.setTimeout(() => {
+            const target = document.getElementById(targetId);
+            if (!target) return;
+
+            const navbar = document.getElementById('navbar-container');
+            const navbarOffset = navbar ? navbar.offsetHeight : 0;
+            const targetTop = target.getBoundingClientRect().top + window.pageYOffset - navbarOffset - 12;
+
+            window.scrollTo({
+                top: Math.max(targetTop, 0),
+                behavior: 'smooth',
+            });
+        }, 80);
+    });
+}
+
+window.loadView = function (view, sectionTarget = null) {
     if (!view) {
         const hash = window.location.hash.substring(1);
         view = hash || (window.isUserLoggedIn() ? 'curhat' : 'home');
@@ -301,19 +338,20 @@ window.loadView = function (view) {
             renderFunction = renderHome;
     }
     
+    let renderResult;
     if (renderFunction) {
         try {
-            renderFunction();
+            renderResult = renderFunction();
         } catch (error) {
             console.error(`Error rendering view ${view}:`, error);
-            renderLogin();
+            renderResult = renderLogin();
         }
     } else {
         console.error(`No render function found for view ${view}`);
-        renderHome();
+        renderResult = renderHome();
     }
     
-    window.updateNavbar().then(() => {
+    Promise.resolve(renderResult).finally(() => window.updateNavbar().then(() => {
         if (isLoggedIn) {
             const cachedUser = window.getCurrentUser();
             if (cachedUser) {
@@ -322,6 +360,8 @@ window.loadView = function (view) {
         }
     }).catch(error => {
         console.error('Error updating navbar:', error);
+    })).finally(() => {
+        scrollToPageSection(sectionTarget);
     });
 };
 

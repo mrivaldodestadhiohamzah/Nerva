@@ -21,6 +21,84 @@ function formatConfidence(value) {
   return formatPercent(numeric > 1 ? numeric : numeric * 100);
 }
 
+const HISTORY_TIME_ZONE = 'Asia/Jakarta';
+const HISTORY_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: HISTORY_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
+function normalizeTimestampValue(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    const looksLikeSqlTimestamp = /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(trimmed);
+
+    if (looksLikeSqlTimestamp) {
+      const isoLike = trimmed.replace(' ', 'T');
+      const hasTimezone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(isoLike);
+      return new Date(hasTimezone ? isoLike : `${isoLike}Z`);
+    }
+
+    return new Date(trimmed);
+  }
+
+  return new Date(value);
+}
+
+function toJakartaDate(value) {
+  const date = normalizeTimestampValue(value);
+  if (!date || Number.isNaN(date.getTime())) return null;
+
+  const parts = HISTORY_DATE_FORMATTER.formatToParts(date).reduce((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = Number(part.value);
+    return acc;
+  }, {});
+
+  return new Date(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour || 0,
+    parts.minute || 0,
+    parts.second || 0
+  );
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function addMonths(date, months) {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
+function getHistoryTimestamp(item = {}) {
+  const parsedDate = toJakartaDate(item.created_at || item.createdAt || item.date);
+  return parsedDate ? parsedDate.getTime() : 0;
+}
+
+function sortHistoryNewestFirst(items = []) {
+  return [...items].sort((a, b) => getHistoryTimestamp(b) - getHistoryTimestamp(a));
+}
+
 export function renderHistory() {
   fetch("views/historyView.html")
     .then((res) => {
@@ -64,8 +142,8 @@ class HistoryPresenter {
     try {
       this.view.showLoading();
       const history = await authenticatedApiCall("/api/history");
-      this.allHistory = history;
-      const groupedFeedbacks = this.groupFeedbacksByPeriod(history);
+      this.allHistory = sortHistoryNewestFirst(history);
+      const groupedFeedbacks = this.groupFeedbacksByPeriod(this.allHistory);
       this.filteredHistory = groupedFeedbacks;
       this.view.renderHistory(groupedFeedbacks);
       this.setupFilterListener();
@@ -85,43 +163,42 @@ class HistoryPresenter {
   }
 
   groupFeedbacksByPeriod(feedbacks) {
-    const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
-    const today = new Date(now);
-    const yesterday = new Date(now);
-    yesterday.setDate(today.getDate() - 1);
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
-    startOfWeek.setHours(0, 0, 0, 0);
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
+    const today = startOfDay(toJakartaDate(new Date()));
+    const tomorrow = addDays(today, 1);
+    const currentMonthStart = startOfMonth(today);
+    const nextMonthStart = addMonths(currentMonthStart, 1);
+    const lastMonthStart = addMonths(currentMonthStart, -1);
+    const currentYearStart = new Date(today.getFullYear(), 0, 1);
+    const lastYearStart = new Date(today.getFullYear() - 1, 0, 1);
+    const currentDayOfWeek = today.getDay();
+    const daysSinceMonday = (currentDayOfWeek + 6) % 7;
+    const startOfWeek = addDays(today, -daysSinceMonday);
+    const nextWeekStart = addDays(startOfWeek, 7);
 
     const grouped = {
       today: [],
       thisWeek: [],
+      thisMonth: [],
       lastMonth: [],
       earlierThisYear: [],
       lastYear: [],
     };
 
-    feedbacks.forEach(feedback => {
-      let feedbackDate;
-      if (typeof feedback.created_at === 'string' && feedback.created_at.includes(' ')) {
-        feedbackDate = new Date(feedback.created_at + ' UTC');
-        feedbackDate = new Date(feedbackDate.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-      } else {
-        feedbackDate = new Date(new Date(feedback.created_at).toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-      }
-      if (feedbackDate.getFullYear() === today.getFullYear() &&
-          feedbackDate.getMonth() === today.getMonth() &&
-          feedbackDate.getDate() === today.getDate()) {
+    sortHistoryNewestFirst(feedbacks).forEach(feedback => {
+      const feedbackDate = toJakartaDate(feedback.created_at);
+      if (!feedbackDate) return;
+
+      if (feedbackDate >= today && feedbackDate < tomorrow) {
         grouped.today.push(feedback);
-      } else if (feedbackDate >= startOfWeek && feedbackDate <= today) {
+      } else if (feedbackDate >= startOfWeek && feedbackDate < nextWeekStart) {
         grouped.thisWeek.push(feedback);
-      } else if (feedbackDate.getFullYear() === currentYear && feedbackDate.getMonth() === currentMonth - 1) {
+      } else if (feedbackDate >= currentMonthStart && feedbackDate < nextMonthStart) {
+        grouped.thisMonth.push(feedback);
+      } else if (feedbackDate >= lastMonthStart && feedbackDate < currentMonthStart) {
         grouped.lastMonth.push(feedback);
-      } else if (feedbackDate.getFullYear() === currentYear) {
+      } else if (feedbackDate >= currentYearStart && feedbackDate < lastMonthStart) {
         grouped.earlierThisYear.push(feedback);
-      } else if (feedbackDate.getFullYear() === currentYear - 1) {
+      } else if (feedbackDate >= lastYearStart && feedbackDate < currentYearStart) {
         grouped.lastYear.push(feedback);
       } else {
         const yearKey = feedbackDate.getFullYear().toString();
@@ -135,16 +212,32 @@ class HistoryPresenter {
     return grouped;
   }
 
+  getFilteredHistory(filterValue) {
+    const combineGroups = (targetKey, keys) => ({
+      [targetKey]: sortHistoryNewestFirst(keys.flatMap(key => this.filteredHistory[key] || [])),
+    });
+
+    if (filterValue === 'thisWeek') {
+      return combineGroups('thisWeek', ['today', 'thisWeek']);
+    }
+
+    if (filterValue === 'thisMonth') {
+      return combineGroups('thisMonth', ['today', 'thisWeek', 'thisMonth']);
+    }
+
+    const filtered = {};
+    if (this.filteredHistory[filterValue] && this.filteredHistory[filterValue].length > 0) {
+      filtered[filterValue] = this.filteredHistory[filterValue];
+    }
+    return filtered;
+  }
+
   filterHistory(filterValue) {
     console.log('Filtering by:', filterValue);
     if (filterValue === 'all') {
       this.view.renderHistoryContent(this.filteredHistory);
     } else {
-      const filtered = {};
-      if (this.filteredHistory[filterValue] && this.filteredHistory[filterValue].length > 0) {
-        filtered[filterValue] = this.filteredHistory[filterValue];
-      }
-      this.view.renderHistoryContent(filtered);
+      this.view.renderHistoryContent(this.getFilteredHistory(filterValue));
     }
     this.setupFilterListener();
     const filterDropdown = document.getElementById('filterDropdown');
@@ -161,7 +254,7 @@ class HistoryPresenter {
     const searchResults = this.allHistory.filter(item =>
       item.text && item.text.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    const groupedResults = this.groupFeedbacksByPeriod(searchResults);
+    const groupedResults = this.groupFeedbacksByPeriod(sortHistoryNewestFirst(searchResults));
     this.view.renderHistoryContent(groupedResults);
   }
 
@@ -200,6 +293,7 @@ class HistoryView {
               <option value="all">Semua Waktu</option>
               <option value="today">Hari Ini</option>
               <option value="thisWeek">Minggu Ini</option>
+              <option value="thisMonth">Bulan Ini</option>
               <option value="lastMonth">Bulan Lalu</option>
               <option value="earlierThisYear">Awal Tahun Ini</option>
               <option value="lastYear">Tahun Lalu</option>
@@ -221,11 +315,12 @@ class HistoryView {
     const sections = [
       { key: 'today', label: 'Hari Ini' },
       { key: 'thisWeek', label: 'Minggu Ini' },
+      { key: 'thisMonth', label: 'Bulan Ini' },
       { key: 'lastMonth', label: 'Bulan Lalu' },
       { key: 'earlierThisYear', label: 'Awal Tahun Ini' },
       { key: 'lastYear', label: 'Tahun Lalu' },
       ...Object.keys(groupedFeedbacks)
-        .filter(key => !['today', 'thisWeek', 'lastMonth', 'earlierThisYear', 'lastYear'].includes(key))
+        .filter(key => !['today', 'thisWeek', 'thisMonth', 'lastMonth', 'earlierThisYear', 'lastYear'].includes(key))
         .sort((a, b) => b - a)
         .map(year => ({ key: year, label: year })),
     ];
@@ -282,7 +377,7 @@ class HistoryView {
       const stressPercentage = this.toPercent(item.stress_percent);
       const stressLevel = item.stress_level || 'tidak diketahui';
       const text = item.text || 'Tidak ada deskripsi';
-      const date = new Date(new Date(item.created_at).toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+      const date = toJakartaDate(item.created_at) || new Date(item.created_at);
       const fusionSummary = this.createFusionSummary(item);
 
       card.innerHTML = `
@@ -436,18 +531,19 @@ class HistoryView {
   }
 
   formatDate(date) {
-    const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-    const diffTime = Math.abs(today - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const jakartaDate = toJakartaDate(date) || date;
+    const today = startOfDay(toJakartaDate(new Date()));
+    const itemDay = startOfDay(jakartaDate);
+    const diffDays = Math.round((today - itemDay) / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) {
-      return 'Hari ini pukul ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays === 2) {
-      return 'Kemarin pukul ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays <= 7) {
-      return date.toLocaleDateString('id-ID', { weekday: 'long' }) + ' pukul ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    if (diffDays === 0) {
+      return 'Hari ini pukul ' + jakartaDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays === 1) {
+      return 'Kemarin pukul ' + jakartaDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays >= 2 && diffDays <= 7) {
+      return jakartaDate.toLocaleDateString('id-ID', { weekday: 'long' }) + ' pukul ' + jakartaDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     } else {
-      return date.toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric' });
+      return jakartaDate.toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric' });
     }
   }
 }

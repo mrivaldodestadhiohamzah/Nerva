@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
+import { backendRootDir, projectRootDir } from "./env.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,9 +11,9 @@ const predictorScript = path.join(__dirname, "../ml/predict.py");
 export function runLocalPrediction(text) {
   return new Promise((resolve, reject) => {
     const pythonPath = process.env.PYTHON_PATH || "python";
-    const pythonPackagePath = process.env.PYTHON_PACKAGE_PATH || path.join(process.cwd(), ".python");
-    const modelPath = process.env.MODEL_PATH || path.join(process.cwd(), "backend/ml/LSTM_model.h5");
-    const tokenizerPath = process.env.TOKENIZER_PATH || path.join(process.cwd(), "backend/ml/tokenizer.pkl");
+    const pythonPackagePath = process.env.PYTHON_PACKAGE_PATH || path.join(projectRootDir, ".python");
+    const modelPath = process.env.MODEL_PATH || path.join(backendRootDir, "ml/LSTM_model.h5");
+    const tokenizerPath = process.env.TOKENIZER_PATH || path.join(backendRootDir, "ml/tokenizer.pkl");
 
     const child = spawn(pythonPath, [predictorScript], {
       env: {

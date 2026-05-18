@@ -40,7 +40,7 @@
   <header id="navbar-container"></header>
 
   <main id="app"></main>
-<footer class="contact border-t border-gray-200 text-gray-600 px-8 py-6 text-[20px]" id="contact">
+<footer class="contact border-t border-gray-200 text-gray-600 px-8 py-6 text-[20px]" id="contact" data-aos="fade-up">
     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-10 ml-6 md:ml-0 mr-6">
       <div class="w-full md:w-64">
         <h2 class="text-2xl font-semibold text-violet-800">Hidden Mood</h2>
@@ -184,10 +184,13 @@
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
   <script>
     AOS.init({
-      duration: 800,
+      duration: 550,
+      delay: 0,
       once: true,
-      offset: 500,
-      easing: 'ease-in-out',
+      mirror: false,
+      offset: 120,
+      easing: 'ease-out-cubic',
+      anchorPlacement: 'top-bottom',
     });
   </script>
 
