@@ -245,9 +245,9 @@ export async function renderHistoryDetail(historyId) {
   );
 
   try {
-    fetch("/views/historydetailView.html")
+    fetch("/views/historyDetailView.html")
       .then((res) => {
-        if (!res.ok) throw new Error("Gagal memuat historydetailView.html");
+        if (!res.ok) throw new Error("Gagal memuat historyDetailView.html");
         return res.text();
       })
       .then((html) => {

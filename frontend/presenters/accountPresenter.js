@@ -18,7 +18,7 @@ export function renderAccount() {
         return;
     }
 
-    fetch("views/account.html")
+    fetch("/views/account.html")
         .then((res) => {
             if (!res.ok) throw new Error("Gagal memuat account.html");
             return res.text();

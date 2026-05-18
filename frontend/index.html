@@ -115,7 +115,7 @@
     async function updateNavbar() {
       const navbarContainer = document.getElementById('navbar-container');
       isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
-      const navbarFile = isLoggedIn ? 'views/navbarLogin.html' : 'views/navbarNotLogin.html';
+      const navbarFile = isLoggedIn ? '/views/navbarLogin.html' : '/views/navbarNotLogin.html';
 
       try {
         const response = await fetch(navbarFile);
@@ -140,20 +140,11 @@
       if (!token) return;
 
       try {
-        const response = await fetch('/api/auth/profile/navbar', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const cachedUser = sessionStorage.getItem('user');
+        if (!cachedUser) return;
 
-        if (response.ok) {
-          const result = await response.json();
-          currentUser = result.user;
-          sessionStorage.setItem('user', JSON.stringify(currentUser));
-          updateProfileDisplay();
-        } else {
-          console.error('Failed to load user data for navbar');
-        }
+        currentUser = JSON.parse(cachedUser);
+        updateProfileDisplay();
       } catch (error) {
         console.error('Error loading user data for navbar:', error);
       }

@@ -51,7 +51,7 @@ app.use("/api", createRateLimiter({ max: 100, windowMs: 60 * 1000 }));
 
 if (fs.existsSync(frontendRootDir)) {
   app.use('/presenters', express.static(path.join(frontendRootDir, 'presenters')));
-  app.use('/views', express.static(path.join(frontendRootDir, 'views')));
+  app.use('/views', express.static(path.join(frontendRootDir, 'public', 'views')));
   app.use('/assets', express.static(path.join(frontendRootDir, 'assets')));
 }
 

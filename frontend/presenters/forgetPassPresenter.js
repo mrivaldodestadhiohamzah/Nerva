@@ -1,7 +1,7 @@
 import { apiCall } from "../config.js";
 
 export function renderForgetPass() {
-  return fetch('views/forgetPasswordView.html')
+  return fetch('/views/forgetPasswordView.html')
     .then(res => {
       if (!res.ok) throw new Error("Gagal memuat halaman lupa kata sandi");
       return res.text();

@@ -115,7 +115,7 @@ window.updateNavbar = async function () {
         return;
     }
     const isLoggedIn = window.isUserLoggedIn();
-    const navbarFile = isLoggedIn ? 'views/navbarLogin.html' : 'views/navbarNotLogin.html';
+    const navbarFile = isLoggedIn ? '/views/navbarLogin.html' : '/views/navbarNotLogin.html';
     try {
         const response = await fetch(navbarFile);
         if (!response.ok) throw new Error(`Failed to load navbar: ${navbarFile}`);

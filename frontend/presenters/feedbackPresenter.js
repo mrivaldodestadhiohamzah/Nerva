@@ -7,7 +7,7 @@ export function renderFeedback() {
     'Hasil analisis sedang ditampilkan. Mohon tunggu sebentar.'
   );
 
-  fetch("views/feedbackView.html")
+  fetch("/views/feedbackView.html")
     .then((res) => {
       if (!res.ok) throw new Error("Gagal memuat feedbackView.html");
       return res.text();

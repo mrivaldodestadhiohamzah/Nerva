@@ -2,7 +2,7 @@ import { apiCall } from '../config.js';
 import { hideGlobalLoading, setButtonLoading, showGlobalLoading } from '../utils/loading.js';
 
 export function renderSignup() {
-  fetch("views/signupView.html")
+  fetch("/views/signupView.html")
     .then((res) => res.text())
     .then((html) => {
       document.getElementById("app").innerHTML = html;

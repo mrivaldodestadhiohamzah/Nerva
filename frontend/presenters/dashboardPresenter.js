@@ -106,7 +106,7 @@ function extractSuggestionItems(feedback = '', maxItems = 3) {
 }
 
 export function renderDashboard() {
-  fetch("views/dashboardView.html")
+  fetch("/views/dashboardView.html")
     .then((res) => {
       if (!res.ok) throw new Error("Gagal memuat dashboardView.html");
       return res.text();
