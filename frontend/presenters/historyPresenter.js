@@ -1,5 +1,6 @@
 import { authenticatedApiCall, isAuthenticated } from '../config.js';
 import { renderHistoryDetail } from './historyDetailPresenter.js';
+import { renderPageLoading } from '../utils/loading.js';
 
 function escapeHtml(value = '') {
   return String(value)
@@ -272,14 +273,10 @@ class HistoryView {
 
   showLoading() {
     const app = document.getElementById('app');
-    app.innerHTML = `
-      <main class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-10">
-        <div class="flex justify-center items-center py-12">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-700"></div>
-          <span class="ml-3 text-gray-600">Memuat riwayat...</span>
-        </div>
-      </main>
-    `;
+    app.innerHTML = renderPageLoading(
+      'Memuat riwayat...',
+      'Server sedang mengambil data riwayat Anda. Mohon tunggu sebentar.'
+    );
   }
 
   renderHistory(groupedFeedbacks) {

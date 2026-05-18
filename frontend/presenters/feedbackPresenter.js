@@ -1,4 +1,11 @@
+import { renderPageLoading } from '../utils/loading.js';
+
 export function renderFeedback() {
+  document.getElementById("app").innerHTML = renderPageLoading(
+    'Menyiapkan hasil...',
+    'Hasil analisis sedang ditampilkan. Mohon tunggu sebentar.'
+  );
+
   fetch("views/feedbackView.html")
     .then((res) => {
       if (!res.ok) throw new Error("Gagal memuat feedbackView.html");

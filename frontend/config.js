@@ -5,6 +5,7 @@ const apiHost = typeof window !== 'undefined' && window.location.hostname
   : 'localhost';
 
 export const API_BASE_URL = (configuredApiBaseUrl || `http://${apiHost}:5001`).replace(/\/$/, '');
+const DEFAULT_API_TIMEOUT_MS = 90000;
 
 // List of endpoints that do not require authentication
 const UNAUTHENTICATED_ENDPOINTS = [
@@ -17,6 +18,11 @@ const UNAUTHENTICATED_ENDPOINTS = [
 export async function apiCall(endpoint, options = {}) {
   const baseUrl = API_BASE_URL; // Use the defined constant
   const token = sessionStorage.getItem('token');
+  const {
+    timeoutMs = DEFAULT_API_TIMEOUT_MS,
+    signal: externalSignal,
+    ...requestOptions
+  } = options;
 
   // Conditionally add token only if the endpoint requires authentication
   const headers = {
@@ -26,13 +32,27 @@ export async function apiCall(endpoint, options = {}) {
   };
 
   const url = `${baseUrl}${endpoint}`; // Construct the full URL
+  const controller = new AbortController();
+  const timeoutDuration = Number(timeoutMs);
+  const timeoutId = Number.isFinite(timeoutDuration) && timeoutDuration > 0
+    ? setTimeout(() => controller.abort(), timeoutDuration)
+    : null;
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
+  }
 
   try {
     console.log(`API Call: ${options.method || 'GET'} ${url}`); // Log the request
 
     const response = await fetch(url, {
-      ...options,
-      headers: headers
+      ...requestOptions,
+      headers: headers,
+      signal: controller.signal
     });
 
     if (!response.ok) {
@@ -63,10 +83,15 @@ export async function apiCall(endpoint, options = {}) {
 
   } catch (error) {
     console.error('API Call failed for', endpoint, ':', error);
+    if (error?.name === 'AbortError') {
+      throw new Error('Server sedang dinyalakan atau respons terlalu lama. Mohon coba lagi sebentar.');
+    }
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
       throw new Error(`Tidak dapat terhubung ke backend di ${baseUrl}. Pastikan npm run server sedang berjalan.`);
     }
     throw error;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 }
 

@@ -1,4 +1,5 @@
 import { apiCall } from '../config.js';
+import { hideGlobalLoading, setButtonLoading, showGlobalLoading } from '../utils/loading.js';
 
 export function renderSignup() {
   fetch("views/signupView.html")
@@ -35,6 +36,7 @@ function attachSignupListeners() {
 
   signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (signupButton.disabled) return;
     clearError();
 
     const name = document.getElementById("signupName")?.value.trim();
@@ -65,8 +67,11 @@ function attachSignupListeners() {
     }
 
     try {
-      signupButton.disabled = true;
-      signupButton.textContent = "Membuat akun...";
+      setButtonLoading(signupButton, true, 'Membuat akun...');
+      showGlobalLoading({
+        title: 'Menghubungkan ke server...',
+        message: 'Pendaftaran sedang diproses. Jika server baru aktif, proses ini bisa sedikit lebih lama.',
+      });
 
       const data = await apiCall('/api/auth/register', {
         method: 'POST',
@@ -83,8 +88,8 @@ function attachSignupListeners() {
       console.error('Registration error:', error);
       showError(error.message);
     } finally {
-      signupButton.disabled = false;
-      signupButton.textContent = "Daftar";
+      hideGlobalLoading();
+      setButtonLoading(signupButton, false);
     }
   });
 

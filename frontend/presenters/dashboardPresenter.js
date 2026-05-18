@@ -157,7 +157,7 @@ let chartInstances = {};
 
 async function initializeDashboard() {
   try {
-    showLoadingState();
+    showLoadingState('Menghubungkan ke server...');
     
     await Promise.all([
       loadDashboardSummary(),
@@ -549,7 +549,7 @@ function getChartFilterDays() {
 
 async function refreshDashboardData() {
   try {
-    showLoadingState();
+    showLoadingState('Menyegarkan data dasbor...');
     
     // Load dashboard summary and recent history first
     await Promise.all([
@@ -576,14 +576,27 @@ async function refreshDashboardData() {
 }
 
 
-function showLoadingState() {
+function setDashboardControlsDisabled(isDisabled) {
+  document.querySelectorAll('#refresh-dashboard, #time-filter, #chart-filter').forEach(control => {
+    control.disabled = isDisabled;
+    control.classList.toggle('opacity-60', isDisabled);
+    control.classList.toggle('cursor-not-allowed', isDisabled);
+  });
+}
+
+function showLoadingState(message = 'Memuat data...') {
+  const messageEl = document.getElementById('dashboard-loading-message');
+  if (messageEl) messageEl.textContent = message;
+
   const loadingElements = document.querySelectorAll('.loading-placeholder');
   loadingElements.forEach(el => el.classList.remove('hidden'));
+  setDashboardControlsDisabled(true);
 }
 
 function hideLoadingState() {
   const loadingElements = document.querySelectorAll('.loading-placeholder');
   loadingElements.forEach(el => el.classList.add('hidden'));
+  setDashboardControlsDisabled(false);
 }
 
 function showError(message) {

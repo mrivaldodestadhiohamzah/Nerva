@@ -1,4 +1,5 @@
 import { apiCall } from '../config.js';
+import { hideGlobalLoading, setButtonLoading, showGlobalLoading } from '../utils/loading.js';
 
 const questions = [
   { text: 'Saya sulit untuk menjadi tenang.', scale: 'stress' },
@@ -93,10 +94,14 @@ async function handleSubmit(event) {
   }
 
   const submitButton = event.currentTarget.querySelector('button[type="submit"]');
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = 'Memproses...';
-  }
+  if (submitButton?.disabled) return;
+
+  let shouldRestoreButton = true;
+  setButtonLoading(submitButton, true, 'Menghitung hasil...');
+  showGlobalLoading({
+    title: 'Menghitung hasil akhir...',
+    message: 'Sistem sedang menggabungkan hasil curhat dan DASS-21. Mohon tunggu sebentar.',
+  });
 
   try {
     const fusedResult = await apiCall('/api/history/fusion', {
@@ -111,14 +116,14 @@ async function handleSubmit(event) {
 
     sessionStorage.setItem('curhatResult', JSON.stringify(fusedResult));
     if (window.loadView) {
+      shouldRestoreButton = false;
       window.loadView('feedback');
     }
   } catch (error) {
     console.error('Failed to calculate fused result:', error);
     alert(`Gagal memproses hasil akhir. ${error.message}`);
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = 'Lihat Hasil';
-    }
+  } finally {
+    hideGlobalLoading();
+    if (shouldRestoreButton) setButtonLoading(submitButton, false);
   }
 }

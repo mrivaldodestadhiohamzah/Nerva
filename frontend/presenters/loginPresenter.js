@@ -1,4 +1,5 @@
 import { apiCall } from '../config.js';
+import { hideGlobalLoading, setButtonLoading, showGlobalLoading } from '../utils/loading.js';
 
 export function renderLogin() {
   fetch("views/loginView.html")
@@ -35,6 +36,7 @@ function attachLoginListeners() {
 
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (loginButton.disabled) return;
     clearError();
 
     const email = document.getElementById("loginEmail")?.value.trim();
@@ -46,8 +48,11 @@ function attachLoginListeners() {
     }
 
     try {
-      loginButton.disabled = true;
-      loginButton.textContent = "Memproses...";
+      setButtonLoading(loginButton, true, 'Menghubungkan...');
+      showGlobalLoading({
+        title: 'Menghubungkan ke server...',
+        message: 'Server sedang dinyalakan, mohon tunggu sebentar.',
+      });
 
       // apiCall already handles JSON parsing and error checking
       const data = await apiCall('/api/auth/login', {
@@ -77,8 +82,8 @@ function attachLoginListeners() {
       console.error('Login error:', error);
       showError(error.message);
     } finally {
-      loginButton.disabled = false;
-      loginButton.textContent = "Masuk";
+      hideGlobalLoading();
+      setButtonLoading(loginButton, false);
     }
   });
 

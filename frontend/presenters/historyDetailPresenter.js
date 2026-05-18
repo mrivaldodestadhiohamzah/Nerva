@@ -1,6 +1,7 @@
 console.log('historyDetailPresenter.js loaded');
 
 import { authenticatedApiCall } from '../config.js';
+import { hideGlobalLoading, renderPageLoading, showGlobalLoading } from '../utils/loading.js';
 
 function escapeHtml(value = '') {
   return String(value)
@@ -238,6 +239,11 @@ export async function renderHistoryDetail(historyId) {
     return;
   }
 
+  document.getElementById("app").innerHTML = renderPageLoading(
+    'Memuat detail riwayat...',
+    'Server sedang mengambil detail hasil Anda. Mohon tunggu sebentar.'
+  );
+
   try {
     fetch("/views/historydetailView.html")
       .then((res) => {
@@ -307,6 +313,10 @@ function loadView(view) {
 async function loadHistoryDetail(historyId) {
   try {
     console.log('Loading history detail for ID:', historyId);
+    showGlobalLoading({
+      title: 'Memuat detail riwayat...',
+      message: 'Server sedang mengambil detail hasil Anda. Mohon tunggu sebentar.',
+    });
     const historyData = await authenticatedApiCall(`/api/history/${historyId}`);
     if (historyData) {
       displayHistoryDetail(historyData);
@@ -316,6 +326,8 @@ async function loadHistoryDetail(historyId) {
   } catch (error) {
     console.error("Error loading history detail:", error);
     showErrorMessage(`Gagal memuat detail riwayat: ${error.message}`);
+  } finally {
+    hideGlobalLoading();
   }
 }
 

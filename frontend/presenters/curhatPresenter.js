@@ -1,4 +1,5 @@
 import { apiCall } from '../config.js';
+import { hideGlobalLoading, setButtonLoading, showGlobalLoading } from '../utils/loading.js';
 
 export function renderCurhat() {
   fetch("views/curhat.html")
@@ -36,6 +37,7 @@ export function renderCurhat() {
 
       curhatForm.addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (submitButton.disabled) return;
         const text = curhatInput.value.trim();
 
         if (!text) {
@@ -126,27 +128,18 @@ export function renderCurhat() {
 }
 
 function showLoading() {
-  const spinner = document.getElementById("spinner");
-  if (spinner) {
-    spinner.classList.remove("hidden");
-  }
-  
+  showGlobalLoading({
+    title: 'Menganalisis curhat...',
+    message: 'Server dan layanan analisis sedang memproses cerita Anda. Mohon tunggu sebentar.',
+  });
+
   const submitButton = document.getElementById("submitCurhat");
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.textContent = "Memproses...";
-  }
+  setButtonLoading(submitButton, true, 'Menganalisis...');
 }
 
 function hideLoading() {
-  const spinner = document.getElementById("spinner");
-  if (spinner) {
-    spinner.classList.add("hidden");
-  }
-  
+  hideGlobalLoading();
+
   const submitButton = document.getElementById("submitCurhat");
-  if (submitButton) {
-    submitButton.disabled = false;
-    submitButton.textContent = "Kirim";
-  }
+  setButtonLoading(submitButton, false);
 }
