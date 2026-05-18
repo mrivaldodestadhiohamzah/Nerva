@@ -12,6 +12,10 @@ import { renderDass21 } from './presenters/dass21Presenter.js';
 
 const himoLogoUrl = new URL('./assets/Himo.png', import.meta.url).href;
 
+if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+}
+
 function hasValidAuthSession() {
     return sessionStorage.getItem('isLoggedIn') === 'true' && !!sessionStorage.getItem('token');
 }
@@ -268,6 +272,14 @@ function scrollToPageSection(sectionTarget) {
     });
 }
 
+function resetPageScroll() {
+    requestAnimationFrame(() => {
+        window.setTimeout(() => {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        }, 0);
+    });
+}
+
 window.loadView = function (view, sectionTarget = null) {
     if (!view) {
         const hash = window.location.hash.substring(1);
@@ -361,7 +373,11 @@ window.loadView = function (view, sectionTarget = null) {
     }).catch(error => {
         console.error('Error updating navbar:', error);
     })).finally(() => {
-        scrollToPageSection(sectionTarget);
+        if (sectionTarget) {
+            scrollToPageSection(sectionTarget);
+        } else {
+            resetPageScroll();
+        }
     });
 };
 

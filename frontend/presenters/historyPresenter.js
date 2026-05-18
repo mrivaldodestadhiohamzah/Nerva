@@ -101,7 +101,7 @@ function sortHistoryNewestFirst(items = []) {
 }
 
 export function renderHistory() {
-  fetch("/views/historyView.html")
+  return fetch("/views/historyView.html")
     .then((res) => {
       if (!res.ok) throw new Error("Gagal memuat historyView.html");
       return res.text();

@@ -2,7 +2,7 @@ import { apiCall } from '../config.js';
 import { hideGlobalLoading, setButtonLoading, showGlobalLoading } from '../utils/loading.js';
 
 export function renderCurhat() {
-  fetch("/views/curhat.html")
+  return fetch("/views/curhat.html")
     .then((res) => {
       if (!res.ok) throw new Error("Gagal memuat curhat.html");
       return res.text();

@@ -2,57 +2,10 @@ import express from "express";
 import axios from "axios";
 import { authenticateToken } from "../middleware/auth.js";
 import { createRateLimiter, sendSafeError, validateRequiredText } from "../utils/security.js";
+import { buildVideoRecommendations } from "../utils/videoRecommendations.js";
 
 const router = express.Router();
 const ML_API_URL = `${process.env.ML_API_URL || "https://capstonetelu-production.up.railway.app"}/predict/analyze`;
-
-function normalizeRecommendations(value) {
-  if (!value) return [];
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return [];
-
-    try {
-      return normalizeRecommendations(JSON.parse(trimmed));
-    } catch {
-      return [trimmed];
-    }
-  }
-
-  if (Array.isArray(value)) {
-    return value.flatMap(normalizeRecommendations);
-  }
-
-  if (typeof value === "object") {
-    return normalizeRecommendations(
-      value.recommendations ??
-      value.video_link ??
-      value.videos ??
-      value.urls ??
-      value.url
-    );
-  }
-
-  return [];
-}
-
-function extractVideoRecommendations(mlResult = {}) {
-  const sources = [
-    mlResult.recommended_videos?.recommendations,
-    mlResult.recommended_videos,
-    mlResult.recommendations,
-    mlResult.videos,
-    mlResult.video_link,
-  ];
-
-  return [...new Set(
-    sources
-      .flatMap(normalizeRecommendations)
-      .map(url => String(url).trim())
-      .filter(Boolean)
-  )];
-}
 
 router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) => {
   const { text } = req.body;
@@ -94,7 +47,8 @@ router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) 
       return sendSafeError(res, 500, "Respons dari ML API tidak valid");
     }
 
-    const recommendations = extractVideoRecommendations(mlResult);
+    const videoRecommendation = buildVideoRecommendations({ mlResult });
+    const recommendations = videoRecommendation.recommendations;
 
     // Extract and validate data with more robust fallbacks
     const responseData = {
@@ -106,7 +60,11 @@ router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) 
         stress_level: 50 
       },
       analysis: mlResult.analysis || 'Your text has been analyzed successfully.',
-      recommended_videos: { recommendations }
+      recommended_videos: {
+        recommendations,
+        source: videoRecommendation.source,
+        basis: videoRecommendation.basis,
+      }
     };
 
     console.log("Processed response data:", {

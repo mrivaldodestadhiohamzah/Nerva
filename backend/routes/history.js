@@ -11,6 +11,7 @@ import {
   getStressLabel,
 } from "../utils/dynamicWeighting.js";
 import { buildRecommendationAnalysis } from "../utils/recommendations.js";
+import { buildVideoRecommendations } from "../utils/videoRecommendations.js";
 
 const router = express.Router();
 const PROTECTED_FIELD_MARKER = "[protected in encrypted metadata]";
@@ -92,24 +93,7 @@ function normalizeRecommendations(value) {
   return [];
 }
 
-function extractVideoRecommendations(mlResult = {}) {
-  const sources = [
-    mlResult.recommended_videos?.recommendations,
-    mlResult.recommended_videos,
-    mlResult.recommendations,
-    mlResult.videos,
-    mlResult.video_link,
-  ];
-
-  return [...new Set(
-    sources
-      .flatMap(normalizeRecommendations)
-      .map(url => String(url).trim())
-      .filter(Boolean)
-  )];
-}
-
-function buildHistoryMetadata({ text, feedback, stressLabel, fusedPercent, dass, fusion, mlResult, recommendations = [], recommendation }) {
+function buildHistoryMetadata({ text, feedback, stressLabel, fusedPercent, dass, fusion, mlResult, recommendations = [], recommendation, videoRecommendation }) {
   const mlPrediction = mlResult.predicted_stress || {};
   const safeRecommendations = normalizeRecommendations(recommendations);
 
@@ -143,6 +127,7 @@ function buildHistoryMetadata({ text, feedback, stressLabel, fusedPercent, dass,
     recommended_videos: {
       recommendations: safeRecommendations,
     },
+    video_recommendation: videoRecommendation,
     recommendation,
   };
 }
@@ -254,7 +239,14 @@ router.post("/history/fusion", createRateLimiter(), authenticateToken, async (re
     });
     const analysis = recommendation.analysis;
     const history_id = generateId();
-    const recommendations = extractVideoRecommendations(ml_result);
+    const videoRecommendation = buildVideoRecommendations({
+      mlResult: ml_result,
+      fusion,
+      dass,
+      stressLabel,
+      fusedPercent,
+    });
+    const recommendations = videoRecommendation.recommendations;
     const historyMetadata = buildHistoryMetadata({
       text: textValidation.value,
       feedback: analysis,
@@ -265,6 +257,7 @@ router.post("/history/fusion", createRateLimiter(), authenticateToken, async (re
       mlResult: ml_result,
       recommendations,
       recommendation,
+      videoRecommendation,
     });
 
     const responseData = {
@@ -279,7 +272,11 @@ router.post("/history/fusion", createRateLimiter(), authenticateToken, async (re
         stress_percent: fusedPercent,
       },
       analysis,
-      recommended_videos: { recommendations },
+      recommended_videos: {
+        recommendations,
+        source: videoRecommendation.source,
+        basis: videoRecommendation.basis,
+      },
       dass21: dass,
       fusion,
       recommendation,
