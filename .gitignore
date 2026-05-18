@@ -101,3 +101,6 @@ supabase/.temp/
 .tern-port
 .lock-wscript
 build/Release/
+
+# Vercel local project metadata
+.vercel/
