@@ -84,10 +84,10 @@ export async function apiCall(endpoint, options = {}) {
   } catch (error) {
     console.error('API Call failed for', endpoint, ':', error);
     if (error?.name === 'AbortError') {
-      throw new Error('Server sedang dinyalakan atau respons terlalu lama. Mohon coba lagi sebentar.');
+      throw new Error('Permintaan membutuhkan waktu lebih lama dari biasanya. Silakan coba lagi sebentar.');
     }
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Tidak dapat terhubung ke backend di ${baseUrl}. Pastikan npm run server sedang berjalan.`);
+      throw new Error('Koneksi belum berhasil. Periksa koneksi Anda atau coba lagi sebentar.');
     }
     throw error;
   } finally {

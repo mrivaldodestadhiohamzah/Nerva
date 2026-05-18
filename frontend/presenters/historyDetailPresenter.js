@@ -241,7 +241,7 @@ export async function renderHistoryDetail(historyId) {
 
   document.getElementById("app").innerHTML = renderPageLoading(
     'Memuat detail riwayat...',
-    'Server sedang mengambil detail hasil Anda. Mohon tunggu sebentar.'
+    'Sebentar ya, detail hasil Anda sedang disiapkan.'
   );
 
   try {
@@ -315,7 +315,7 @@ async function loadHistoryDetail(historyId) {
     console.log('Loading history detail for ID:', historyId);
     showGlobalLoading({
       title: 'Memuat detail riwayat...',
-      message: 'Server sedang mengambil detail hasil Anda. Mohon tunggu sebentar.',
+      message: 'Sebentar ya, detail hasil Anda sedang disiapkan.',
     });
     const historyData = await authenticatedApiCall(`/api/history/${historyId}`);
     if (historyData) {

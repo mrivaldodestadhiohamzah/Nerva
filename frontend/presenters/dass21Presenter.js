@@ -100,7 +100,7 @@ async function handleSubmit(event) {
   setButtonLoading(submitButton, true, 'Menghitung hasil...');
   showGlobalLoading({
     title: 'Menghitung hasil akhir...',
-    message: 'Sistem sedang menggabungkan hasil curhat dan DASS-21. Mohon tunggu sebentar.',
+    message: 'Sebentar ya, hasil curhat dan kuesioner sedang disiapkan.',
   });
 
   try {

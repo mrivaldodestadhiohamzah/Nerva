@@ -68,7 +68,7 @@ export function renderCurhat() {
           console.log("Curhat analysis response received");
 
           if (!result || typeof result !== 'object') {
-            throw new Error('Format respons server tidak valid');
+            throw new Error('Format respons tidak valid');
           }
 
           const enhancedResult = {
@@ -103,10 +103,10 @@ export function renderCurhat() {
           let errorMessage = "Gagal memproses curhat Anda. ";
           
           if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            errorMessage += "Pastikan server backend berjalan di localhost:5001.";
+            errorMessage += "Periksa koneksi Anda lalu coba lagi.";
           }
           else if (error.message.includes('timeout')) {
-            errorMessage += "Permintaan terlalu lama. Layanan ML mungkin sedang lambat. Silakan coba lagi.";
+            errorMessage += "Proses analisis membutuhkan waktu lebih lama dari biasanya. Silakan coba lagi.";
           }
           else if (error.message.includes('ML API')) {
             errorMessage += "Layanan analisis ML sedang bermasalah. Silakan coba lagi nanti.";
@@ -130,7 +130,7 @@ export function renderCurhat() {
 function showLoading() {
   showGlobalLoading({
     title: 'Menganalisis curhat...',
-    message: 'Server dan layanan analisis sedang memproses cerita Anda. Mohon tunggu sebentar.',
+    message: 'Sebentar ya, cerita Anda sedang dianalisis dengan hati-hati.',
   });
 
   const submitButton = document.getElementById("submitCurhat");

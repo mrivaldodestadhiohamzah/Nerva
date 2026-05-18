@@ -48,10 +48,10 @@ function attachLoginListeners() {
     }
 
     try {
-      setButtonLoading(loginButton, true, 'Menghubungkan...');
+      setButtonLoading(loginButton, true, 'Memuat...');
       showGlobalLoading({
-        title: 'Menghubungkan ke server...',
-        message: 'Server sedang dinyalakan, mohon tunggu sebentar.',
+        title: 'Memuat...',
+        message: 'Sebentar ya, akun Anda sedang diperiksa.',
       });
 
       // apiCall already handles JSON parsing and error checking

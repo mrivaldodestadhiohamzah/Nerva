@@ -157,7 +157,7 @@ let chartInstances = {};
 
 async function initializeDashboard() {
   try {
-    showLoadingState('Menghubungkan ke server...');
+    showLoadingState('Menyiapkan dasbor...');
     
     await Promise.all([
       loadDashboardSummary(),

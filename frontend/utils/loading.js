@@ -8,10 +8,11 @@ function escapeHtml(value = '') {
 }
 
 const GLOBAL_LOADING_ID = 'global-loading-overlay';
+const BRAND_LOGO_URL = new URL('../assets/Himo.png', import.meta.url).href;
 
 export function showGlobalLoading({
-  title = 'Menghubungkan ke server...',
-  message = 'Server sedang dinyalakan, mohon tunggu sebentar.',
+  title = 'Memuat...',
+  message = 'Sebentar ya, data sedang disiapkan.',
 } = {}) {
   let overlay = document.getElementById(GLOBAL_LOADING_ID);
 
@@ -27,9 +28,17 @@ export function showGlobalLoading({
 
   overlay.innerHTML = `
     <div class="w-full max-w-sm rounded-2xl border border-violet-100 bg-white p-6 text-center shadow-xl">
-      <div class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-violet-100 border-t-violet-700"></div>
+      <img src="${BRAND_LOGO_URL}" alt="HiMO" class="mx-auto mb-3 h-14 w-auto object-contain" />
+      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-50">
+        <div class="h-8 w-8 animate-spin rounded-full border-4 border-violet-100 border-t-violet-700"></div>
+      </div>
       <p class="text-base font-semibold text-gray-800">${escapeHtml(title)}</p>
       <p class="mt-2 text-sm leading-relaxed text-gray-600">${escapeHtml(message)}</p>
+      <div class="mt-4 flex items-center justify-center gap-1.5" aria-hidden="true">
+        <span class="h-2 w-2 animate-bounce rounded-full bg-violet-700"></span>
+        <span class="h-2 w-2 animate-bounce rounded-full bg-violet-500" style="animation-delay: 120ms"></span>
+        <span class="h-2 w-2 animate-bounce rounded-full bg-violet-300" style="animation-delay: 240ms"></span>
+      </div>
     </div>
   `;
   overlay.classList.remove('hidden');
@@ -68,14 +77,22 @@ export function setButtonLoading(button, isLoading, loadingText = 'Memproses...'
 
 export function renderPageLoading(
   title = 'Memuat data...',
-  message = 'Server sedang dinyalakan, mohon tunggu sebentar.'
+  message = 'Sebentar ya, data sedang disiapkan.'
 ) {
   return `
     <main class="min-h-screen bg-gray-50 px-4 py-10 flex items-center justify-center">
       <section class="w-full max-w-md rounded-2xl border border-violet-100 bg-white p-6 text-center shadow-sm">
-        <div class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-violet-100 border-t-violet-700"></div>
+        <img src="${BRAND_LOGO_URL}" alt="HiMO" class="mx-auto mb-3 h-14 w-auto object-contain" />
+        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-50">
+          <div class="h-8 w-8 animate-spin rounded-full border-4 border-violet-100 border-t-violet-700"></div>
+        </div>
         <h1 class="text-lg font-semibold text-gray-800">${escapeHtml(title)}</h1>
         <p class="mt-2 text-sm leading-relaxed text-gray-600">${escapeHtml(message)}</p>
+        <div class="mt-4 flex items-center justify-center gap-1.5" aria-hidden="true">
+          <span class="h-2 w-2 animate-bounce rounded-full bg-violet-700"></span>
+          <span class="h-2 w-2 animate-bounce rounded-full bg-violet-500" style="animation-delay: 120ms"></span>
+          <span class="h-2 w-2 animate-bounce rounded-full bg-violet-300" style="animation-delay: 240ms"></span>
+        </div>
       </section>
     </main>
   `;

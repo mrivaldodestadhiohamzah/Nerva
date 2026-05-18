@@ -69,8 +69,8 @@ function attachSignupListeners() {
     try {
       setButtonLoading(signupButton, true, 'Membuat akun...');
       showGlobalLoading({
-        title: 'Menghubungkan ke server...',
-        message: 'Pendaftaran sedang diproses. Jika server baru aktif, proses ini bisa sedikit lebih lama.',
+        title: 'Menyiapkan akun...',
+        message: 'Sebentar ya, pendaftaran Anda sedang diproses.',
       });
 
       const data = await apiCall('/api/auth/register', {

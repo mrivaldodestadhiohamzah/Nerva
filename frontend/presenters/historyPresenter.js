@@ -275,7 +275,7 @@ class HistoryView {
     const app = document.getElementById('app');
     app.innerHTML = renderPageLoading(
       'Memuat riwayat...',
-      'Server sedang mengambil data riwayat Anda. Mohon tunggu sebentar.'
+      'Sebentar ya, riwayat Anda sedang disiapkan.'
     );
   }
 
