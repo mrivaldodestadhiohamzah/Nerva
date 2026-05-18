@@ -95,12 +95,43 @@ function getNumericPercent(...values) {
   return null;
 }
 
+function getMlStressLabel(mlResult = {}) {
+  return (
+    mlResult.predicted_stress?.label ||
+    mlResult.stress_label ||
+    mlResult.stressLevel ||
+    mlResult.label ||
+    ""
+  );
+}
+
+function getMlEmotionLabel(mlResult = {}) {
+  return (
+    mlResult.predicted_emotion?.label ||
+    mlResult.emotion ||
+    mlResult.emotion_label ||
+    mlResult.sentiment ||
+    mlResult.prediction ||
+    ""
+  );
+}
+
+function getMlStressPercent(mlResult = {}) {
+  return getNumericPercent(
+    mlResult.stress_level?.stress_level,
+    mlResult.stress_percent,
+    mlResult.stressPercent,
+    mlResult.percent,
+    mlResult.score
+  );
+}
+
 function getStressCategory({ mlResult = {}, stressLabel, fusedPercent, fusion = {} }) {
-  const label = normalizeLabel(stressLabel || mlResult.predicted_stress?.label);
+  const label = normalizeLabel(stressLabel || getMlStressLabel(mlResult));
   const percent = getNumericPercent(
     fusedPercent,
     fusion.fusedStressPercent,
-    mlResult.stress_level?.stress_level
+    getMlStressPercent(mlResult)
   );
 
   if (label.includes("severe") || label.includes("very high") || label.includes("tinggi")) return "high";
@@ -118,12 +149,7 @@ function getStressCategory({ mlResult = {}, stressLabel, fusedPercent, fusion = 
 }
 
 function getEmotionCategory({ mlResult = {}, dass = {} }) {
-  const emotion = normalizeLabel(
-    mlResult.predicted_emotion?.label ||
-    mlResult.emotion ||
-    mlResult.emotion_label ||
-    mlResult.prediction
-  );
+  const emotion = normalizeLabel(getMlEmotionLabel(mlResult));
   const dominantScale = normalizeLabel(dass.dominantScale);
 
   if (
@@ -178,10 +204,12 @@ export function buildVideoRecommendations({
   maxItems = 2,
 } = {}) {
   const mlRecommendations = extractMlVideoRecommendations(mlResult);
-  const mlLabel = normalizeLabel(mlResult.predicted_stress?.label);
+  const mlStressLabel = getMlStressLabel(mlResult);
+  const mlEmotionLabel = getMlEmotionLabel(mlResult);
+  const mlLabel = normalizeLabel(mlStressLabel);
   const emotionCategory = getEmotionCategory({ mlResult, dass });
   const stressCategory = getStressCategory({ mlResult, stressLabel, fusedPercent, fusion });
-  const percent = getNumericPercent(fusedPercent, fusion.fusedStressPercent, mlResult.stress_level?.stress_level);
+  const percent = getNumericPercent(fusedPercent, fusion.fusedStressPercent, getMlStressPercent(mlResult));
   const seed = [
     mlLabel,
     normalizeLabel(stressLabel),
@@ -195,8 +223,8 @@ export function buildVideoRecommendations({
       recommendations: pickRecommendations(mlRecommendations, seed, maxItems),
       source: "ml_api",
       basis: {
-        mlStressLabel: mlResult.predicted_stress?.label || null,
-        mlEmotionLabel: mlResult.predicted_emotion?.label || null,
+        mlStressLabel: mlStressLabel || null,
+        mlEmotionLabel: mlEmotionLabel || null,
         stressCategory,
         emotionCategory,
       },
@@ -212,8 +240,8 @@ export function buildVideoRecommendations({
     recommendations: pickRecommendations(candidatePool, seed, maxItems),
     source: "dynamic_rule_fallback",
     basis: {
-      mlStressLabel: mlResult.predicted_stress?.label || null,
-      mlEmotionLabel: mlResult.predicted_emotion?.label || null,
+      mlStressLabel: mlStressLabel || null,
+      mlEmotionLabel: mlEmotionLabel || null,
       stressCategory,
       emotionCategory,
       fusedStressPercent: getNumericPercent(fusedPercent, fusion.fusedStressPercent),
