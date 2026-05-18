@@ -1,0 +1,17 @@
+# Local dependencies and generated build output
+node_modules/
+dist/
+
+# Local Vercel project metadata
+.vercel/
+
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+
+# Logs and caches
+*.log
+.vite/
+coverage/
+*.tsbuildinfo
