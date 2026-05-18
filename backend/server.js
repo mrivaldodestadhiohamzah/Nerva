@@ -30,8 +30,10 @@ const defaultAllowedOrigins = [
 ];
 
 const allowedOrigins = new Set(
-  (process.env.ALLOWED_ORIGINS || defaultAllowedOrigins.join(','))
-    .split(',')
+  [
+    ...defaultAllowedOrigins,
+    ...(process.env.ALLOWED_ORIGINS || '').split(','),
+  ]
     .map(origin => origin.trim())
     .filter(Boolean)
 );
