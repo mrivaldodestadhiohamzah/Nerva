@@ -1,7 +1,7 @@
-<div class="navbar flex items-center justify-between px-3 sm:px-6 lg:px-8 py-2 sm:py-3 bg-white border-b border-violet-100 relative shadow-sm">
-  <a href="#" onclick="loadView('home')" class="sm:ml-3 flex items-center shrink-0">
+<div class="navbar flex items-center justify-between px-3 sm:px-5 lg:px-7 py-1.5 sm:py-2 bg-white border-b border-violet-100 relative shadow-sm">
+  <a href="#" onclick="loadView('home')" class="sm:ml-2 flex items-center shrink-0">
     <img data-navbar-logo src="/assets/NervaLogo.png" alt="Logo NERVA"
-class="h-[4.5rem] sm:h-20 lg:h-24 xl:h-28 w-auto max-w-[9rem] sm:max-w-[11rem] lg:max-w-[13rem] xl:max-w-[15rem] object-contain" />
+class="h-14 sm:h-16 lg:h-[4.5rem] xl:h-20 w-auto max-w-[8.5rem] sm:max-w-[10rem] lg:max-w-[12rem] xl:max-w-[13.5rem] object-contain" />
   </a>
 
   <button id="menu-toggle" aria-label="Buka menu navigasi" class="lg:hidden text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-300 sm:mr-4 p-2 rounded-full hover:bg-violet-50 hover:text-violet-800 transition">
@@ -15,32 +15,32 @@ class="h-[4.5rem] sm:h-20 lg:h-24 xl:h-28 w-auto max-w-[9rem] sm:max-w-[11rem] l
   <nav id="navbar-menu"
        class="hidden absolute top-full left-0 w-full bg-white shadow-lg border-t border-violet-100 px-4 py-4 z-10 
               flex-col gap-3
-              lg:flex lg:flex-row lg:items-center lg:gap-5 lg:ml-8 xl:ml-12 lg:shadow-none lg:border-t-0 lg:bg-transparent lg:py-0 lg:px-0 lg:w-auto lg:relative lg:translate-x-0">
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
-      <a href="#" data-nav-view="home" onclick="loadView('home')" class="nav-link inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-4">Beranda</a>
-      <a href="#" onclick="loadView('home', 'visi-misi')" class="nav-link inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-4">Tentang</a>
-      <a href="#" onclick="loadView('home', 'contact')" class="nav-link inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-4">Kontak</a>
+              lg:flex lg:flex-row lg:items-center lg:gap-4 lg:ml-9 xl:ml-12 lg:shadow-none lg:border-t-0 lg:bg-transparent lg:py-0 lg:px-0 lg:w-auto lg:relative lg:translate-x-2 xl:translate-x-3">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-3">
+      <a href="#" data-nav-view="home" onclick="loadView('home')" class="nav-link inline-flex min-h-10 items-center justify-center rounded-full px-3.5 py-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200">Beranda</a>
+      <a href="#" onclick="loadView('home', 'visi-misi')" class="nav-link inline-flex min-h-10 items-center justify-center rounded-full px-3.5 py-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200">Tentang</a>
+      <a href="#" onclick="loadView('home', 'contact')" class="nav-link inline-flex min-h-10 items-center justify-center rounded-full px-3.5 py-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200">Kontak</a>
     </div>
 
     <div class="flex flex-col gap-3 mt-4 pt-4 border-t border-violet-100 lg:hidden">
       <a href="#" onclick="loadView('login'); document.getElementById('navbar-menu').classList.add('hidden');"
-         class="inline-flex min-h-11 w-full items-center justify-center px-4 py-2.5 text-sm leading-6 bg-violet-800 text-white font-semibold rounded-full hover:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-300 transition">
+         class="inline-flex min-h-10 w-full items-center justify-center px-3.5 py-2 text-sm leading-6 bg-violet-800 text-white font-semibold rounded-full hover:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-300 transition">
         Masuk
       </a>
       <a href="#" onclick="loadView('signup'); document.getElementById('navbar-menu').classList.add('hidden');"
-         class="inline-flex min-h-11 w-full items-center justify-center px-4 py-2.5 text-sm leading-6 border border-violet-800 text-violet-800 font-semibold rounded-full hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300 transition">
+         class="inline-flex min-h-10 w-full items-center justify-center px-3.5 py-2 text-sm leading-6 border border-violet-800 text-violet-800 font-semibold rounded-full hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300 transition">
         Daftar
       </a>
     </div>
   </nav>
 
-  <div class="hidden lg:flex gap-3 items-center mr-6">
+  <div class="hidden lg:flex gap-2.5 items-center mr-4">
     <a href="#" onclick="loadView('login')"
-       class="inline-flex min-h-11 w-28 items-center justify-center px-4 py-2.5 text-sm leading-6 bg-violet-800 text-white font-semibold rounded-full hover:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-300 transition text-center">
+       class="inline-flex min-h-10 w-24 items-center justify-center px-3.5 py-2 text-sm leading-6 bg-violet-800 text-white font-semibold rounded-full hover:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-300 transition text-center">
       Masuk
     </a>
     <a href="#" onclick="loadView('signup')"
-       class="inline-flex min-h-11 w-28 items-center justify-center px-4 py-2.5 text-sm leading-6 border border-violet-800 text-violet-800 font-semibold rounded-full hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300 transition text-center">
+       class="inline-flex min-h-10 w-24 items-center justify-center px-3.5 py-2 text-sm leading-6 border border-violet-800 text-violet-800 font-semibold rounded-full hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300 transition text-center">
       Daftar
     </a>
   </div>

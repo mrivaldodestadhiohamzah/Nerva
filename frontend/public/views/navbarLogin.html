@@ -1,9 +1,9 @@
 <body class="bg-gray-50">
     <!-- Navbar -->
-    <div class="navbar flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2 sm:py-3 bg-white border-b border-violet-100 relative shadow-sm lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-5">
-        <a href="#" onclick="loadView('home')" class="sm:ml-3 flex items-center self-center shrink-0 lg:justify-self-start">
+    <div class="navbar flex items-center justify-between gap-3 px-3 sm:px-5 lg:px-7 py-1.5 sm:py-2 bg-white border-b border-violet-100 relative shadow-sm lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-4">
+        <a href="#" onclick="loadView('home')" class="sm:ml-2 flex items-center self-center shrink-0 lg:justify-self-start">
                 <img data-navbar-logo src="/assets/NervaLogo.png" alt="Logo NERVA"
-class="h-[4.5rem] sm:h-20 lg:h-24 xl:h-28 w-auto max-w-[9rem] sm:max-w-[11rem] lg:max-w-[13rem] xl:max-w-[15rem] object-contain" />
+class="h-14 sm:h-16 lg:h-[4.5rem] xl:h-20 w-auto max-w-[8.5rem] sm:max-w-[10rem] lg:max-w-[12rem] xl:max-w-[13.5rem] object-contain" />
         </a>
         
         <button id="menu-toggle" aria-label="Buka menu navigasi" class="lg:hidden text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-300 sm:mr-4 p-2 rounded-full hover:bg-violet-50 hover:text-violet-800 transition">
@@ -17,33 +17,33 @@ class="h-[4.5rem] sm:h-20 lg:h-24 xl:h-28 w-auto max-w-[9rem] sm:max-w-[11rem] l
         <nav id="navbar-menu"
              class="hidden absolute top-full left-0 w-full bg-white shadow-lg border-t border-violet-100 px-4 py-4 z-10 
                     flex-col gap-3
-                    lg:static lg:col-start-2 lg:flex lg:flex-row lg:items-center lg:justify-center lg:self-center lg:justify-self-center lg:gap-4 lg:shadow-none lg:border-t-0 lg:bg-transparent lg:py-0 lg:px-0 lg:w-auto lg:min-w-0 lg:translate-x-0">
-            <div class="flex flex-col gap-3 lg:flex-row lg:flex-nowrap lg:items-center lg:justify-center lg:gap-2 xl:gap-3">
-                <a href="#" data-nav-view="home" onclick="loadView('home')" class="nav-link inline-flex h-11 items-center justify-center rounded-full px-4 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-4 lg:whitespace-nowrap">Beranda</a>
-                <a href="#" data-nav-view="curhat" onclick="loadView('curhat')" class="nav-link inline-flex h-11 items-center justify-center rounded-full px-4 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-4 lg:whitespace-nowrap">Cek Mood</a>
-                <a href="#" data-nav-view="dashboard" onclick="loadView('dashboard')" class="nav-link inline-flex h-11 items-center justify-center rounded-full px-4 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-4 lg:whitespace-nowrap">Dasbor</a>
-                <a href="#" data-nav-view="history" onclick="loadView('history')" class="nav-link inline-flex h-11 items-center justify-center rounded-full px-4 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-4 lg:whitespace-nowrap">Riwayat</a>
+                    lg:static lg:col-start-2 lg:flex lg:flex-row lg:items-center lg:justify-center lg:self-center lg:justify-self-center lg:gap-3 lg:shadow-none lg:border-t-0 lg:bg-transparent lg:py-0 lg:px-0 lg:w-auto lg:min-w-0 lg:translate-x-3 xl:translate-x-4">
+            <div class="flex flex-col gap-3 lg:flex-row lg:flex-nowrap lg:items-center lg:justify-center lg:gap-2 xl:gap-2.5">
+                <a href="#" data-nav-view="home" onclick="loadView('home')" class="nav-link inline-flex h-10 items-center justify-center rounded-full px-3.5 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-3.5 lg:whitespace-nowrap">Beranda</a>
+                <a href="#" data-nav-view="curhat" onclick="loadView('curhat')" class="nav-link inline-flex h-10 items-center justify-center rounded-full px-3.5 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-3.5 lg:whitespace-nowrap">Cek Mood</a>
+                <a href="#" data-nav-view="dashboard" onclick="loadView('dashboard')" class="nav-link inline-flex h-10 items-center justify-center rounded-full px-3.5 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-3.5 lg:whitespace-nowrap">Dasbor</a>
+                <a href="#" data-nav-view="history" onclick="loadView('history')" class="nav-link inline-flex h-10 items-center justify-center rounded-full px-3.5 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-3.5 lg:whitespace-nowrap">Riwayat</a>
             </div>
             
             <div class="flex flex-col gap-3 mt-4 pt-4 border-t border-violet-100 lg:hidden">
                 <a href="#" onclick="loadView('account')"
-                   class="inline-flex min-h-11 w-full items-center justify-center px-4 py-2.5 text-sm leading-6 bg-violet-700 text-white font-semibold rounded-full hover:bg-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition">
+                   class="inline-flex min-h-10 w-full items-center justify-center px-3.5 py-2 text-sm leading-6 bg-violet-700 text-white font-semibold rounded-full hover:bg-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition">
                     Pengaturan
                 </a>
                 <button onclick="confirmLogout()" 
-                        class="inline-flex min-h-11 w-full items-center justify-center px-4 py-2.5 text-sm leading-6 bg-red-600 text-white font-semibold rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 transition">
+                        class="inline-flex min-h-10 w-full items-center justify-center px-3.5 py-2 text-sm leading-6 bg-red-600 text-white font-semibold rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 transition">
                     Keluar
                 </button>
             </div>
         </nav>
         
-        <div class="hidden lg:flex h-12 items-center justify-end mr-6 relative shrink-0 lg:col-start-3 lg:justify-self-end">
-            <div class="relative flex h-12 items-center">
+        <div class="hidden lg:flex h-11 items-center justify-end mr-4 relative shrink-0 lg:col-start-3 lg:justify-self-end">
+            <div class="relative flex h-11 items-center">
                 <button id="profile-dropdown-btn" onclick="toggleProfileDropdown()" 
                         data-nav-view="account"
-                        class="inline-flex h-12 items-center justify-center gap-2 rounded-full px-2 focus:outline-none focus:ring-2 focus:ring-violet-300 hover:bg-violet-50 transition">
+                        class="inline-flex h-11 items-center justify-center gap-2 rounded-full px-2 focus:outline-none focus:ring-2 focus:ring-violet-300 hover:bg-violet-50 transition">
                     <img id="profile-image" src="" alt="Profil" 
-                         class="w-10 h-10 shrink-0 rounded-full border-2 border-gray-300 hover:border-violet-500 transition-colors object-cover">
+                         class="w-9 h-9 shrink-0 rounded-full border-2 border-gray-300 hover:border-violet-500 transition-colors object-cover">
                     <svg class="w-4 h-4 shrink-0 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
