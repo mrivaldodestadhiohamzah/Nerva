@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 const defaultAllowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  'https://nerva.vercel.app',
+  'https://nervargd.vercel.app',
 ];
 
 const allowedOrigins = new Set(
