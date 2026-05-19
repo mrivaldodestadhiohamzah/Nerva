@@ -3,7 +3,7 @@
     <div class="navbar flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2 sm:py-3 bg-white border-b border-violet-100 relative shadow-sm lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-5">
         <a href="#" onclick="loadView('home')" class="sm:ml-3 flex items-center self-center shrink-0 lg:justify-self-start">
                 <img data-navbar-logo src="/assets/NervaLogo.png" alt="Logo NERVA"
-class="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto max-w-[10rem] sm:max-w-[13rem] lg:max-w-[16rem] xl:max-w-[18rem] object-contain" />
+class="h-[4.5rem] sm:h-20 lg:h-24 xl:h-28 w-auto max-w-[9rem] sm:max-w-[11rem] lg:max-w-[13rem] xl:max-w-[15rem] object-contain" />
         </a>
         
         <button id="menu-toggle" aria-label="Buka menu navigasi" class="lg:hidden text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-300 sm:mr-4 p-2 rounded-full hover:bg-violet-50 hover:text-violet-800 transition">
@@ -19,19 +19,19 @@ class="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto max-w-[10rem] sm:max-w-[13rem] lg:max
                     flex-col gap-3
                     lg:static lg:col-start-2 lg:flex lg:flex-row lg:items-center lg:justify-center lg:self-center lg:justify-self-center lg:gap-4 lg:shadow-none lg:border-t-0 lg:bg-transparent lg:py-0 lg:px-0 lg:w-auto lg:min-w-0 lg:translate-x-0">
             <div class="flex flex-col gap-3 lg:flex-row lg:flex-nowrap lg:items-center lg:justify-center lg:gap-2 xl:gap-3">
-                <a href="#" data-nav-view="home" onclick="loadView('home')" class="nav-link inline-flex h-12 items-center justify-center rounded-full px-5 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-4 xl:px-5 xl:text-base lg:whitespace-nowrap">Beranda</a>
-                <a href="#" data-nav-view="curhat" onclick="loadView('curhat')" class="nav-link inline-flex h-12 items-center justify-center rounded-full px-5 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-4 xl:px-5 xl:text-base lg:whitespace-nowrap">Cek Mood</a>
-                <a href="#" data-nav-view="dashboard" onclick="loadView('dashboard')" class="nav-link inline-flex h-12 items-center justify-center rounded-full px-5 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-4 xl:px-5 xl:text-base lg:whitespace-nowrap">Dasbor</a>
-                <a href="#" data-nav-view="history" onclick="loadView('history')" class="nav-link inline-flex h-12 items-center justify-center rounded-full px-5 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-4 xl:px-5 xl:text-base lg:whitespace-nowrap">Riwayat</a>
+                <a href="#" data-nav-view="home" onclick="loadView('home')" class="nav-link inline-flex h-11 items-center justify-center rounded-full px-4 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-4 lg:whitespace-nowrap">Beranda</a>
+                <a href="#" data-nav-view="curhat" onclick="loadView('curhat')" class="nav-link inline-flex h-11 items-center justify-center rounded-full px-4 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-4 lg:whitespace-nowrap">Cek Mood</a>
+                <a href="#" data-nav-view="dashboard" onclick="loadView('dashboard')" class="nav-link inline-flex h-11 items-center justify-center rounded-full px-4 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-4 lg:whitespace-nowrap">Dasbor</a>
+                <a href="#" data-nav-view="history" onclick="loadView('history')" class="nav-link inline-flex h-11 items-center justify-center rounded-full px-4 text-center text-sm font-semibold leading-6 text-gray-700 hover:bg-violet-50 hover:text-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-200 lg:px-3 xl:px-4 lg:whitespace-nowrap">Riwayat</a>
             </div>
             
             <div class="flex flex-col gap-3 mt-4 pt-4 border-t border-violet-100 lg:hidden">
                 <a href="#" onclick="loadView('account')"
-                   class="inline-flex min-h-12 w-full items-center justify-center px-5 py-3 text-base leading-6 bg-violet-700 text-white font-semibold rounded-full hover:bg-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition">
+                   class="inline-flex min-h-11 w-full items-center justify-center px-4 py-2.5 text-sm leading-6 bg-violet-700 text-white font-semibold rounded-full hover:bg-violet-800 focus:outline-none focus:ring-2 focus:ring-violet-300 transition">
                     Pengaturan
                 </a>
                 <button onclick="confirmLogout()" 
-                        class="inline-flex min-h-12 w-full items-center justify-center px-5 py-3 text-base leading-6 bg-red-600 text-white font-semibold rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 transition">
+                        class="inline-flex min-h-11 w-full items-center justify-center px-4 py-2.5 text-sm leading-6 bg-red-600 text-white font-semibold rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 transition">
                     Keluar
                 </button>
             </div>
