@@ -26,6 +26,8 @@ const __dirname = path.dirname(__filename);
 const defaultAllowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
   'https://nervargd.vercel.app',
 ];
 
@@ -38,20 +40,41 @@ const allowedOrigins = new Set(
     .filter(Boolean)
 );
 
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-}));
-app.use(cors({
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (allowedOrigins.has(origin)) return true;
+
+  try {
+    const { protocol, hostname } = new URL(origin);
+    return (
+      protocol === 'https:' &&
+      /^nervargd-[a-z0-9-]+\.vercel\.app$/i.test(hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
       return;
     }
 
     callback(new Error(`CORS blocked for origin: ${origin}`));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+};
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(express.json({ limit: "25kb" }));
 app.use(express.urlencoded({ extended: true, limit: "25kb" }));
 app.use(sanitizeRequestBody);
