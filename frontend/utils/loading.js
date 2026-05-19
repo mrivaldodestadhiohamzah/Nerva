@@ -8,7 +8,7 @@ function escapeHtml(value = '') {
 }
 
 const GLOBAL_LOADING_ID = 'global-loading-overlay';
-const BRAND_LOGO_URL = new URL('../assets/Himo.png', import.meta.url).href;
+const BRAND_LOGO_URL = new URL('../assets/NervaLogo.png', import.meta.url).href;
 
 export function showGlobalLoading({
   title = 'Memuat...',
@@ -28,7 +28,7 @@ export function showGlobalLoading({
 
   overlay.innerHTML = `
     <div class="w-full max-w-sm rounded-2xl border border-violet-100 bg-white p-6 text-center shadow-xl">
-      <img src="${BRAND_LOGO_URL}" alt="HiMO" class="mx-auto mb-3 h-14 w-auto object-contain" />
+      <img src="${BRAND_LOGO_URL}" alt="NERVA" class="mx-auto mb-3 h-14 w-auto object-contain" />
       <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-50">
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-violet-100 border-t-violet-700"></div>
       </div>
@@ -82,7 +82,7 @@ export function renderPageLoading(
   return `
     <main class="min-h-screen bg-gray-50 px-4 py-10 flex items-center justify-center">
       <section class="w-full max-w-md rounded-2xl border border-violet-100 bg-white p-6 text-center shadow-sm">
-        <img src="${BRAND_LOGO_URL}" alt="HiMO" class="mx-auto mb-3 h-14 w-auto object-contain" />
+        <img src="${BRAND_LOGO_URL}" alt="NERVA" class="mx-auto mb-3 h-14 w-auto object-contain" />
         <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-50">
           <div class="h-8 w-8 animate-spin rounded-full border-4 border-violet-100 border-t-violet-700"></div>
         </div>

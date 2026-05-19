@@ -103,7 +103,7 @@ router.post("/request", async (req, res) => {
     const mailOptions = {
       from: process.env.SMTP_EMAIL,
       to: cleanEmail,
-      subject: "Kode Atur Ulang Kata Sandi Hidden Mood",
+      subject: "Kode Atur Ulang Kata Sandi NERVA",
       text: `Kode verifikasi Anda: ${code}. Kode berlaku selama 10 menit.`,
       html: `<p>Kode verifikasi Anda: <strong>${code}</strong>. Kode berlaku selama 10 menit.</p>`,
     };

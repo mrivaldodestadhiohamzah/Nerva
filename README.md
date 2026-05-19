@@ -1,4 +1,4 @@
-# HIMO / Hidden Mood
+# NERVA
 
 Web-based mental health self-assessment application using DASS-21, Indonesian curhat analysis, dynamic weighted fusion, dashboard visualization, history tracking, and privacy-focused encrypted storage.
 

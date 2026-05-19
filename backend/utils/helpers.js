@@ -6,7 +6,7 @@ export function getJwtSecret() {
   }
 
   if (process.env.NODE_ENV !== 'production') {
-    return 'hiddenmood-local-dev-secret';
+    return 'nerva-local-dev-secret';
   }
 
   return null;

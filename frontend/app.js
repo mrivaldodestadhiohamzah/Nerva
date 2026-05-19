@@ -10,7 +10,7 @@ import { renderAccount } from './presenters/accountPresenter.js';
 import { apiCall } from './config.js';
 import { renderDass21 } from './presenters/dass21Presenter.js';
 
-const himoLogoUrl = new URL('./assets/Himo.png', import.meta.url).href;
+const nervaLogoUrl = new URL('./assets/NervaLogo.png', import.meta.url).href;
 
 if ('scrollRestoration' in window.history) {
     window.history.scrollRestoration = 'manual';
@@ -127,7 +127,7 @@ window.updateNavbar = async function () {
         navbarContainer.innerHTML = html;
         const navbarLogo = navbarContainer.querySelector('[data-navbar-logo]');
         if (navbarLogo) {
-            navbarLogo.src = himoLogoUrl;
+            navbarLogo.src = nervaLogoUrl;
         }
         setupNavbarLinkHandling(navbarContainer);
         setActiveNavLink();

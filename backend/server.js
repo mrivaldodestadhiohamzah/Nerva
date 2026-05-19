@@ -68,7 +68,7 @@ app.set("views", path.join(backendRootDir, "views"));
 
 app.get("/", (req, res) => {
   res.json({
-    message: "Hidden Mood API is running",
+    message: "NERVA API is running",
     databaseConfigured: isSupabaseConfigured
   });
 });

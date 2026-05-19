@@ -1,4 +1,4 @@
-const USER_KEY = 'himo_users';
+const USER_KEY = 'nerva_users';
 
 export function saveUser(user) {
   const users = getUsers();
