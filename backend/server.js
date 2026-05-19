@@ -26,6 +26,8 @@ const __dirname = path.dirname(__filename);
 const defaultAllowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
   'http://localhost:4173',
   'http://127.0.0.1:4173',
   'https://nervargd.vercel.app',
@@ -34,9 +36,12 @@ const defaultAllowedOrigins = [
 const allowedOrigins = new Set(
   [
     ...defaultAllowedOrigins,
+    process.env.FRONTEND_URL,
+    process.env.CORS_ORIGIN,
+    ...(process.env.CORS_ORIGINS || '').split(','),
     ...(process.env.ALLOWED_ORIGINS || '').split(','),
   ]
-    .map(origin => origin.trim())
+    .map(origin => String(origin || '').trim())
     .filter(Boolean)
 );
 
@@ -55,6 +60,9 @@ function isAllowedOrigin(origin) {
   }
 }
 
+const corsMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+const corsAllowedHeaders = ['Content-Type', 'Authorization'];
+
 const corsOptions = {
   origin(origin, callback) {
     if (isAllowedOrigin(origin)) {
@@ -65,11 +73,33 @@ const corsOptions = {
     callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: corsMethods,
+  allowedHeaders: corsAllowedHeaders,
   optionsSuccessStatus: 204,
 };
 
+function applyCorsHeaders(req, res, next) {
+  const origin = req.headers.origin;
+
+  if (origin && isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', corsMethods.join(','));
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      req.headers['access-control-request-headers'] || corsAllowedHeaders.join(',')
+    );
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  next();
+}
+
+app.use(applyCorsHeaders);
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
