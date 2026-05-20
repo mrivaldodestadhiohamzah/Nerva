@@ -199,6 +199,14 @@ function buildInsertCandidates(payload) {
   return candidates;
 }
 
+function normalizeHistoryId(value) {
+  const historyId = String(value || "").trim();
+  if (!historyId || historyId === "undefined" || historyId === "null" || historyId.length > 128) {
+    return null;
+  }
+  return historyId;
+}
+
 router.post("/history/fusion", createRateLimiter(), authenticateToken, async (req, res) => {
   const { text, ml_result, dass21_answers, dass21_duration_seconds } = req.body;
   const textValidation = validateRequiredText(text, "Teks");
@@ -392,14 +400,45 @@ router.get("/history", authenticateToken, async (req, res) => {
   }
 });
 
+// Delete one history item owned by the authenticated user
+router.delete("/history/:historyId", authenticateToken, async (req, res) => {
+  const historyId = normalizeHistoryId(req.params.historyId);
+  if (!historyId) {
+    return sendSafeError(res, 400, "ID riwayat tidak valid");
+  }
+
+  try {
+    const { data: deletedEntry, error } = await supabase
+      .from("history")
+      .delete()
+      .eq("history_id", historyId)
+      .eq("user_id", req.user.user_id)
+      .select("history_id")
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!deletedEntry) {
+      return sendSafeError(res, 404, "Riwayat tidak ditemukan");
+    }
+
+    return res.json({
+      message: "Riwayat berhasil dihapus",
+      history_id: deletedEntry.history_id,
+    });
+  } catch (error) {
+    console.error("Error deleting history:", error);
+    return sendSafeError(res, 500, "Gagal menghapus riwayat");
+  }
+});
+
 // Get single history item by ID
 router.get("/history/:historyId", authenticateToken, async (req, res) => {
   try {
-    const { historyId } = req.params;
+    const historyId = normalizeHistoryId(req.params.historyId);
     console.log(`Fetching history item: historyId=${historyId}, userId=${req.user.user_id}`);
 
-    // Validate historyId format (assuming it's a number or UUID)
-    if (!historyId || historyId === 'undefined' || historyId === 'null') {
+    if (!historyId) {
       return sendSafeError(res, 400, "ID riwayat tidak valid");
     }
 

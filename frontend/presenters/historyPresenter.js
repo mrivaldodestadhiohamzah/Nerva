@@ -127,6 +127,9 @@ class HistoryPresenter {
     this.view = view;
     this.allHistory = [];
     this.filteredHistory = {};
+    this.currentFilter = 'all';
+    this.pendingDeleteId = null;
+    this.isDeleting = false;
   }
 
   async loadHistory() {
@@ -147,6 +150,10 @@ class HistoryPresenter {
       const groupedFeedbacks = this.groupFeedbacksByPeriod(this.allHistory);
       this.filteredHistory = groupedFeedbacks;
       this.view.renderHistory(groupedFeedbacks);
+      this.view.bindDeleteModal({
+        onCancel: () => this.cancelDelete(),
+        onConfirm: () => this.confirmDelete(),
+      });
       this.setupFilterListener();
     } catch (error) {
       console.error('Failed to load feedback history:', error);
@@ -158,6 +165,7 @@ class HistoryPresenter {
     const filterDropdown = document.getElementById('filterDropdown');
     if (filterDropdown) {
       filterDropdown.addEventListener('change', (e) => {
+        this.currentFilter = e.target.value;
         this.filterHistory(e.target.value);
       });
     }
@@ -235,6 +243,7 @@ class HistoryPresenter {
 
   filterHistory(filterValue) {
     console.log('Filtering by:', filterValue);
+    this.currentFilter = filterValue;
     if (filterValue === 'all') {
       this.view.renderHistoryContent(this.filteredHistory);
     } else {
@@ -245,6 +254,17 @@ class HistoryPresenter {
     if (filterDropdown) {
       filterDropdown.value = filterValue;
     }
+  }
+
+  rerenderCurrentFilter() {
+    if (this.currentFilter === 'all') {
+      this.view.renderHistoryContent(this.filteredHistory);
+      return;
+    }
+
+    this.view.renderHistoryContent(this.getFilteredHistory(this.currentFilter));
+    const filterDropdown = document.getElementById('filterDropdown');
+    if (filterDropdown) filterDropdown.value = this.currentFilter;
   }
 
   getHistoryItem(historyId) {
@@ -262,6 +282,48 @@ class HistoryPresenter {
   showDetail(historyId) {
     console.log('showDetail called with historyId:', historyId);
     renderHistoryDetail(historyId);
+  }
+
+  requestDelete(historyId) {
+    const item = this.getHistoryItem(historyId);
+    if (!item) {
+      this.view.showToast('Riwayat tidak ditemukan.', 'error');
+      return;
+    }
+
+    this.pendingDeleteId = historyId;
+    this.view.openDeleteModal();
+  }
+
+  cancelDelete() {
+    this.pendingDeleteId = null;
+    this.view.closeDeleteModal();
+  }
+
+  async confirmDelete() {
+    const historyId = this.pendingDeleteId;
+    if (!historyId || this.isDeleting) return;
+
+    try {
+      this.isDeleting = true;
+      this.view.setDeleteLoading(true);
+      await authenticatedApiCall(`/api/history/${encodeURIComponent(historyId)}`, {
+        method: 'DELETE',
+      });
+
+      this.allHistory = this.allHistory.filter(item => item.history_id !== historyId);
+      this.filteredHistory = this.groupFeedbacksByPeriod(this.allHistory);
+      this.pendingDeleteId = null;
+      this.view.closeDeleteModal();
+      this.rerenderCurrentFilter();
+      this.view.showToast('Riwayat berhasil dihapus.', 'success');
+    } catch (error) {
+      console.error('Failed to delete history:', error);
+      this.view.showToast(error.message || 'Gagal menghapus riwayat. Silakan coba lagi.', 'error');
+    } finally {
+      this.isDeleting = false;
+      this.view.setDeleteLoading(false);
+    }
   }
 }
 
@@ -298,6 +360,7 @@ class HistoryView {
           </div>
         </div>
         <div id="historyContainer"></div>
+        ${this.createDeleteModal()}
       </main>
     `;
     this.renderHistoryContent(groupedFeedbacks);
@@ -376,6 +439,7 @@ class HistoryView {
       const text = item.text || 'Tidak ada deskripsi';
       const date = toJakartaDate(item.created_at) || new Date(item.created_at);
       const fusionSummary = this.createFusionSummary(item);
+      const historyId = escapeHtml(item.history_id);
 
       card.innerHTML = `
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -394,10 +458,17 @@ class HistoryView {
               ${fusionSummary}
             </div>
           </div>
-          <div class="flex-shrink-0 self-end sm:self-center sm:ml-4">
-            <svg class="w-6 h-6 text-violet-700 cursor-pointer detail-button" fill="none" stroke="currentColor" viewBox="0 0 24 24" data-history-id="${item.history_id}">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
+          <div class="flex flex-shrink-0 items-center gap-2 self-end sm:self-center sm:ml-4">
+            <button type="button" class="delete-history-button inline-flex h-10 w-10 items-center justify-center rounded-full text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 transition" data-history-id="${historyId}" aria-label="Hapus riwayat" title="Hapus riwayat">
+              <svg class="h-5 w-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3 0V5a2 2 0 012-2h0a2 2 0 012 2v2"></path>
+              </svg>
+            </button>
+            <button type="button" class="detail-button inline-flex h-10 w-10 items-center justify-center rounded-full text-violet-700 hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300 transition" data-history-id="${historyId}" aria-label="Lihat detail riwayat" title="Lihat detail">
+              <svg class="h-6 w-6 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
           </div>
         </div>
       `;
@@ -405,10 +476,10 @@ class HistoryView {
       container.appendChild(card);
     });
 
-    this.attachDetailButtonListeners(containerId);
+    this.attachCardActionListeners(containerId);
   }
 
-  attachDetailButtonListeners(containerId) {
+  attachCardActionListeners(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -421,6 +492,98 @@ class HistoryView {
         this.presenter.showDetail(historyId);
       });
     });
+
+    const deleteButtons = container.querySelectorAll('.delete-history-button');
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const historyId = button.dataset.historyId;
+        this.presenter.requestDelete(historyId);
+      });
+    });
+  }
+
+  createDeleteModal() {
+    return `
+      <div id="history-delete-modal" tabindex="-1" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"></path>
+            </svg>
+          </div>
+          <h3 class="text-center text-lg font-semibold text-gray-900">Hapus Riwayat</h3>
+          <p class="mt-2 text-center text-sm leading-relaxed text-gray-600">Apakah Anda yakin ingin menghapus riwayat ini?</p>
+          <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button type="button" id="history-delete-cancel" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
+              Batal
+            </button>
+            <button type="button" id="history-delete-confirm" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
+              Hapus
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  bindDeleteModal({ onCancel, onConfirm }) {
+    const modal = document.getElementById('history-delete-modal');
+    const cancelButton = document.getElementById('history-delete-cancel');
+    const confirmButton = document.getElementById('history-delete-confirm');
+
+    if (!modal || !cancelButton || !confirmButton) return;
+
+    cancelButton.addEventListener('click', onCancel);
+    confirmButton.addEventListener('click', onConfirm);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) onCancel();
+    });
+    modal.addEventListener('keydown', (event) => {
+      if (modal.classList.contains('hidden')) return;
+      if (event.key === 'Escape') onCancel();
+      if (event.key === 'Enter') onConfirm();
+    });
+  }
+
+  openDeleteModal() {
+    const modal = document.getElementById('history-delete-modal');
+    const confirmButton = document.getElementById('history-delete-confirm');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+    confirmButton?.focus();
+  }
+
+  closeDeleteModal() {
+    const modal = document.getElementById('history-delete-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  setDeleteLoading(isLoading) {
+    const confirmButton = document.getElementById('history-delete-confirm');
+    const cancelButton = document.getElementById('history-delete-cancel');
+    if (!confirmButton) return;
+
+    confirmButton.disabled = isLoading;
+    if (cancelButton) cancelButton.disabled = isLoading;
+    confirmButton.classList.toggle('opacity-75', isLoading);
+    confirmButton.classList.toggle('cursor-not-allowed', isLoading);
+    confirmButton.textContent = isLoading ? 'Menghapus...' : 'Hapus';
+  }
+
+  showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    const isError = type === 'error';
+    toast.className = `fixed right-4 top-4 z-[60] max-w-sm rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition ${isError ? 'bg-red-600' : 'bg-green-600'}`;
+    toast.setAttribute('role', isError ? 'alert' : 'status');
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add('opacity-0');
+      setTimeout(() => toast.remove(), 250);
+    }, 3500);
   }
 
   renderError(message) {

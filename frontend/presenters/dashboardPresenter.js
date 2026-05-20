@@ -154,6 +154,8 @@ let dashboardData = {
 };
 
 let chartInstances = {};
+let pendingDashboardDeleteId = null;
+let isDashboardDeleting = false;
 
 async function initializeDashboard() {
   try {
@@ -225,6 +227,7 @@ async function loadRecentHistory(limit = 10) {
     dashboardData.recentActivity = data.slice(0, 5).map(item => ({
       date: item.created_at,
       text: item.text,
+      history_id: item.history_id,
     }));
     
   } catch (error) {
@@ -393,7 +396,7 @@ function updatePredictionsTable() {
   if (recentPredictions.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="4" class="px-6 py-8 text-center text-gray-500">
+        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
           Belum ada analisis
         </td>
       </tr>
@@ -445,9 +448,18 @@ function updatePredictionsTable() {
       <td class="px-4 sm:px-6 py-4 text-sm text-gray-500 max-w-xs break-words" title="${escapeHtml(suggestion)}">
         ${escapeHtml(suggestion.length > 40 ? suggestion.substring(0, 40) + '...' : suggestion)}
       </td>
+      <td class="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
+        <button type="button" class="delete-dashboard-history inline-flex h-9 w-9 items-center justify-center rounded-full text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 transition" data-history-id="${escapeHtml(prediction.history_id || '')}" aria-label="Hapus riwayat" title="Hapus riwayat">
+          <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3 0V5a2 2 0 012-2h0a2 2 0 012 2v2"></path>
+          </svg>
+        </button>
+      </td>
     `;
     tbody.appendChild(row);
   });
+
+  attachDashboardDeleteHandlers();
 }
 
 function updateTips() {
@@ -540,6 +552,115 @@ function setupEventListeners() {
 function getCurrentFilterDays() {
   const timeFilter = document.getElementById('time-filter');
   return timeFilter ? parseInt(timeFilter.value) : 30;
+}
+
+function attachDashboardDeleteHandlers() {
+  document.querySelectorAll('.delete-dashboard-history').forEach(button => {
+    button.addEventListener('click', () => {
+      const historyId = button.dataset.historyId;
+      if (!historyId) {
+        showError('ID riwayat tidak valid');
+        return;
+      }
+      pendingDashboardDeleteId = historyId;
+      openDashboardDeleteModal();
+    });
+  });
+}
+
+function ensureDashboardDeleteModal() {
+  let modal = document.getElementById('dashboard-delete-modal');
+  if (modal) return modal;
+
+  modal = document.createElement('div');
+  modal.id = 'dashboard-delete-modal';
+  modal.tabIndex = -1;
+  modal.className = 'hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4';
+  modal.innerHTML = `
+    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+        <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"></path>
+        </svg>
+      </div>
+      <h3 class="text-center text-lg font-semibold text-gray-900">Hapus Riwayat</h3>
+      <p class="mt-2 text-center text-sm leading-relaxed text-gray-600">Apakah Anda yakin ingin menghapus riwayat ini?</p>
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button type="button" id="dashboard-delete-cancel" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
+          Batal
+        </button>
+        <button type="button" id="dashboard-delete-confirm" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
+          Hapus
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeDashboardDeleteModal();
+  });
+  modal.addEventListener('keydown', (event) => {
+    if (modal.classList.contains('hidden')) return;
+    if (event.key === 'Escape') closeDashboardDeleteModal();
+    if (event.key === 'Enter') confirmDashboardDelete();
+  });
+  modal.querySelector('#dashboard-delete-cancel')?.addEventListener('click', closeDashboardDeleteModal);
+  modal.querySelector('#dashboard-delete-confirm')?.addEventListener('click', confirmDashboardDelete);
+
+  return modal;
+}
+
+function openDashboardDeleteModal() {
+  const modal = ensureDashboardDeleteModal();
+  modal.classList.remove('hidden');
+  modal.querySelector('#dashboard-delete-confirm')?.focus();
+}
+
+function closeDashboardDeleteModal() {
+  if (isDashboardDeleting) return;
+  pendingDashboardDeleteId = null;
+  document.getElementById('dashboard-delete-modal')?.classList.add('hidden');
+}
+
+function setDashboardDeleteLoading(isLoading) {
+  const confirmButton = document.getElementById('dashboard-delete-confirm');
+  const cancelButton = document.getElementById('dashboard-delete-cancel');
+  if (!confirmButton) return;
+
+  confirmButton.disabled = isLoading;
+  if (cancelButton) cancelButton.disabled = isLoading;
+  confirmButton.classList.toggle('opacity-75', isLoading);
+  confirmButton.classList.toggle('cursor-not-allowed', isLoading);
+  confirmButton.textContent = isLoading ? 'Menghapus...' : 'Hapus';
+}
+
+async function confirmDashboardDelete() {
+  const historyId = pendingDashboardDeleteId;
+  if (!historyId || isDashboardDeleting) return;
+
+  try {
+    isDashboardDeleting = true;
+    setDashboardDeleteLoading(true);
+    await authenticatedApiCall(`/api/history/${encodeURIComponent(historyId)}`, {
+      method: 'DELETE',
+    });
+
+    dashboardData.recentPredictions = dashboardData.recentPredictions.filter(item => item.history_id !== historyId);
+    dashboardData.recentActivity = dashboardData.recentActivity.filter(item => item.history_id !== historyId);
+    updatePredictionsTable();
+    updateRecentActivity();
+    document.getElementById('dashboard-delete-modal')?.classList.add('hidden');
+    pendingDashboardDeleteId = null;
+    showSuccess('Riwayat berhasil dihapus');
+    await refreshDashboardData();
+  } catch (error) {
+    console.error('Error deleting dashboard history:', error);
+    showError(error.message || 'Gagal menghapus riwayat');
+  } finally {
+    isDashboardDeleting = false;
+    setDashboardDeleteLoading(false);
+  }
 }
 
 function getChartFilterDays() {
@@ -680,4 +801,17 @@ function loadView(view) {
       console.warn("View tidak dikenali:", view);
       break;
   }
+}
+
+function showSuccess(message) {
+  const notification = document.createElement('div');
+  notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50';
+  notification.textContent = message;
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    if (document.body.contains(notification)) {
+      document.body.removeChild(notification);
+    }
+  }, 4000);
 }
