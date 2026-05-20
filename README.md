@@ -17,25 +17,61 @@ Install dependencies from the repository root:
 npm install
 ```
 
-Run the frontend:
+Create local frontend config:
 
-```bash
-npm run dev
+```env
+# frontend/.env.local
+VITE_API_BASE_URL=http://localhost:5001
+VITE_ML_API_URL=http://localhost:8000
 ```
 
-Run the backend:
+Create local backend config:
+
+```env
+# backend/.env.local
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000,https://nervargd.vercel.app
+ML_API_URL=http://localhost:8000
+```
+
+Keep backend secrets such as `SUPABASE_SERVICE_KEY`, `JWT_SECRET`, and
+`DATA_ENCRYPTION_KEY` in `backend/.env`. Do not put backend secrets in
+frontend env files because `VITE_*` values are visible in the browser.
+
+Run the backend API on `http://localhost:5001`:
 
 ```bash
 npm run server
 ```
 
-The frontend uses `VITE_API_BASE_URL` from `frontend/.env` when present. For local development, copy `frontend/.env.example` to `frontend/.env` and set:
+Run the local ML API on `http://localhost:8000`:
 
-```env
-VITE_API_BASE_URL=http://localhost:5001
+```bash
+npm run backend:ml
 ```
 
-The backend uses environment variables from the repository root `.env` or `backend/.env`. Copy `backend/.env.example` to `backend/.env` and fill in real secrets locally only.
+The local ML API exposes `POST /predict/analyze` and uses the model files in
+`backend/ml/`. If Python or TensorFlow is not available globally, configure
+`PYTHON_PATH` and `PYTHON_PACKAGE_PATH` in `backend/.env.local`.
+
+Run the frontend on `http://localhost:5173`:
+
+```bash
+npm run dev
+```
+
+For production later, only change environment values:
+
+```env
+# frontend/.env or hosting env
+VITE_API_BASE_URL=https://NEW-BACKEND-HOSTING-URL
+VITE_ML_API_URL=https://NEW-ML-HOSTING-URL
+
+# backend/.env or hosting env
+ML_API_URL=https://NEW-ML-HOSTING-URL
+FRONTEND_URL=https://nervargd.vercel.app
+```
 
 ## Deployment
 

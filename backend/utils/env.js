@@ -9,6 +9,8 @@ const projectRoot = path.resolve(backendRoot, "..");
 
 dotenv.config({ path: path.join(projectRoot, ".env") });
 dotenv.config({ path: path.join(backendRoot, ".env") });
+dotenv.config({ path: path.join(projectRoot, ".env.local"), override: true });
+dotenv.config({ path: path.join(backendRoot, ".env.local"), override: true });
 dotenv.config();
 
 export const projectRootDir = projectRoot;

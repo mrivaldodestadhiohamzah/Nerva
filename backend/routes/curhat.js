@@ -5,7 +5,19 @@ import { createRateLimiter, sendSafeError, validateRequiredText } from "../utils
 import { buildVideoRecommendations } from "../utils/videoRecommendations.js";
 
 const router = express.Router();
-const ML_API_URL = `${process.env.ML_API_URL || "https://capstonetelu-production.up.railway.app"}/predict/analyze`;
+
+function buildMlAnalyzeUrl() {
+  const configuredUrl = String(process.env.ML_API_URL || "").trim();
+
+  if (!configuredUrl) {
+    return "";
+  }
+
+  const normalizedUrl = configuredUrl.replace(/\/+$/, "");
+  return normalizedUrl.endsWith("/predict/analyze")
+    ? normalizedUrl
+    : `${normalizedUrl}/predict/analyze`;
+}
 
 router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) => {
   const { text } = req.body;
@@ -28,9 +40,15 @@ router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) 
   }
 
   try {
-    console.log("Calling ML API:", ML_API_URL);
+    const mlAnalyzeUrl = buildMlAnalyzeUrl();
+
+    if (!mlAnalyzeUrl) {
+      return sendSafeError(res, 503, "ML API belum dikonfigurasi");
+    }
+
+    console.log("Calling ML API:", mlAnalyzeUrl);
     const { data: mlResult } = await axios.post(
-      ML_API_URL,
+      mlAnalyzeUrl,
       { text: cleanText },
       {
         headers: { "Content-Type": "application/json" },

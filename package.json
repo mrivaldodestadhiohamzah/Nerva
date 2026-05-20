@@ -14,6 +14,7 @@
     "frontend:dev": "npm --prefix frontend run dev",
     "frontend:build": "npm --prefix frontend run build",
     "backend:start": "npm --prefix backend start",
+    "backend:ml": "npm --prefix backend run ml:local",
     "backend:test:weights": "npm --prefix backend run test:weights"
   },
   "author": "",

@@ -1,9 +1,15 @@
 // Enhanced config.js with better error handling, debugging, and authentication
-const DEFAULT_API_BASE_URL = 'https://hiddenmood-backend-production.up.railway.app';
-const configuredApiBaseUrl = import.meta.env?.VITE_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL;
+function normalizeBaseUrl(value) {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
 
-export const API_BASE_URL = configuredApiBaseUrl.replace(/\/$/, '');
+export const API_BASE_URL = normalizeBaseUrl(import.meta.env?.VITE_API_BASE_URL);
+export const ML_API_URL = normalizeBaseUrl(import.meta.env?.VITE_ML_API_URL);
 const DEFAULT_API_TIMEOUT_MS = 90000;
+
+if (!API_BASE_URL) {
+  console.warn('VITE_API_BASE_URL belum diatur. API akan memakai path relatif.');
+}
 
 // List of endpoints that do not require authentication
 const UNAUTHENTICATED_ENDPOINTS = [
@@ -14,7 +20,7 @@ const UNAUTHENTICATED_ENDPOINTS = [
 
 // Generic API call function
 export async function apiCall(endpoint, options = {}) {
-  const baseUrl = API_BASE_URL; // Use the defined constant
+  const baseUrl = API_BASE_URL; // Empty base URL falls back to same-origin API paths.
   const token = sessionStorage.getItem('token');
   const {
     timeoutMs = DEFAULT_API_TIMEOUT_MS,
