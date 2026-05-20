@@ -137,7 +137,7 @@ app.use("/api", (req, res, next) => {
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api", curhatRoutes);
-app.use("/api", historyRoutes);
+app.use("/api/history", historyRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api", feedbackRoutes);

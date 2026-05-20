@@ -16,13 +16,19 @@ export const authenticateToken = (req, res, next) => {
 
     if (token == null) {
         console.log("No token provided");
-        return res.sendStatus(401);
+        return res.status(401).json({
+            success: false,
+            message: "Tidak memiliki akses"
+        });
     }
 
     jwt.verify(token, jwtSecret, (err, user) => {
         if (err) {
             console.error("Token verification failed:", err.message);
-            return res.sendStatus(403);
+            return res.status(403).json({
+                success: false,
+                message: "Tidak memiliki akses"
+            });
         }
 
         console.log("Token verified successfully");
