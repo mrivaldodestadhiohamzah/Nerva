@@ -144,6 +144,13 @@ app.use("/api", feedbackRoutes);
 app.use("/api", historyDetailRouter);
 app.use("/api/forgot-password", forgotPasswordRouter); // Moved here
 
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Endpoint API tidak ditemukan",
+  });
+});
+
 app.use((err, req, res, _next) => {
   console.error("Unhandled backend error:", {
     path: req.path,

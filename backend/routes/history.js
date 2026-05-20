@@ -401,8 +401,10 @@ router.get("/", authenticateToken, async (req, res) => {
 });
 
 // Delete one history item owned by the authenticated user
-router.delete("/:id", authenticateToken, async (req, res) => {
+async function deleteHistoryById(req, res) {
   const historyId = normalizeHistoryId(req.params.id);
+  console.log("DELETE history route hit:", historyId);
+
   if (!historyId) {
     return res.status(400).json({
       success: false,
@@ -440,7 +442,11 @@ router.delete("/:id", authenticateToken, async (req, res) => {
       message: "Gagal menghapus riwayat",
     });
   }
-});
+}
+
+router.delete("/:id", authenticateToken, deleteHistoryById);
+// Compatibility for older server mounts that used app.use("/api", historyRoutes).
+router.delete("/history/:id", authenticateToken, deleteHistoryById);
 
 // Get single history item by ID
 router.get("/:historyId", authenticateToken, async (req, res) => {
