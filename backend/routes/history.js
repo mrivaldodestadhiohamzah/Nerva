@@ -402,8 +402,8 @@ router.get("/", authenticateToken, async (req, res) => {
 
 // Delete one history item owned by the authenticated user
 async function deleteHistoryById(req, res) {
+  console.log("DELETE history hit:", req.params.id);
   const historyId = normalizeHistoryId(req.params.id);
-  console.log("DELETE history route hit:", historyId);
 
   if (!historyId) {
     return res.status(400).json({
@@ -444,6 +444,7 @@ async function deleteHistoryById(req, res) {
   }
 }
 
+console.log("DELETE /api/history/:id route loaded");
 router.delete("/:id", authenticateToken, deleteHistoryById);
 // Compatibility for older server mounts that used app.use("/api", historyRoutes).
 router.delete("/history/:id", authenticateToken, deleteHistoryById);
