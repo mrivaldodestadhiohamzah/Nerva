@@ -1,9 +1,12 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
+import crypto from "crypto";
 import "../utils/env.js";
-import { supabase } from "../supabaseClient.js";
+import { isSupabaseConfigured, supabase } from "../supabaseClient.js";
 import { createRateLimiter, sendSafeError, validateRequiredText } from "../utils/security.js";
+import { getJwtSecret, normalizeEmail, validateEmail, validatePassword } from "../utils/helpers.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -23,34 +26,83 @@ const transporter = isSmtpConfigured
 if (transporter) {
   transporter.verify((error) => {
     if (error) {
-      console.error("SMTP configuration error:", error.message);
+      logger.warn("SMTP configuration error", { message: error.message });
     } else {
-      console.log("SMTP server is ready to send emails");
+      logger.info("SMTP server is ready to send emails");
     }
   });
 } else {
-  console.log("SMTP is not configured. Forgot-password email sending is disabled.");
+  logger.warn("SMTP is not configured. Forgot-password email sending is disabled.");
 }
+
+const resetTokenStore = new Map();
+const RESET_CODE_TTL_MS = 10 * 60 * 1000;
+const RESET_TOKEN_TTL_MS = 10 * 60 * 1000;
 
 // Generate a 6-digit code
 function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Validate password (same as profile.js)
-function validatePassword(password) {
-  const minLength = 8;
-  const hasLetter = /[a-zA-Z]/.test(password);
-  const hasNumber = /\d/.test(password);
-  const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+function getResetSecret() {
+  return process.env.DATA_ENCRYPTION_KEY || getJwtSecret() || "nerva-local-reset-secret";
+}
 
-  if (password.length < minLength || !(hasLetter && hasNumber && hasSymbol)) {
-    return {
-      isValid: false,
-      message: "Kata sandi minimal 8 karakter dan harus berisi kombinasi huruf, angka, dan simbol.",
-    };
+function hashSecret(value) {
+  return crypto.createHmac("sha256", getResetSecret()).update(String(value)).digest("hex");
+}
+
+function safeEqual(a, b) {
+  const left = Buffer.from(String(a || ""));
+  const right = Buffer.from(String(b || ""));
+
+  return left.length === right.length && crypto.timingSafeEqual(left, right);
+}
+
+function matchesStoredSecret(storedSecret, providedSecret) {
+  const hashedProvided = hashSecret(providedSecret);
+  return safeEqual(storedSecret, hashedProvided) || safeEqual(storedSecret, providedSecret);
+}
+
+function cleanupExpiredResetTokens() {
+  const now = Date.now();
+  for (const [tokenHash, tokenData] of resetTokenStore.entries()) {
+    if (tokenData.expiresAt <= now || tokenData.used) {
+      resetTokenStore.delete(tokenHash);
+    }
   }
-  return { isValid: true, message: "" };
+}
+
+function createResetToken(email) {
+  cleanupExpiredResetTokens();
+  const resetToken = crypto.randomBytes(32).toString("base64url");
+  const tokenHash = hashSecret(resetToken);
+
+  resetTokenStore.set(tokenHash, {
+    email,
+    expiresAt: Date.now() + RESET_TOKEN_TTL_MS,
+    used: false,
+  });
+
+  return resetToken;
+}
+
+function consumeResetToken(email, resetToken) {
+  cleanupExpiredResetTokens();
+  const tokenHash = hashSecret(resetToken);
+  const tokenData = resetTokenStore.get(tokenHash);
+
+  if (!tokenData || tokenData.used || tokenData.expiresAt <= Date.now()) {
+    return false;
+  }
+
+  if (tokenData.email !== email) {
+    return false;
+  }
+
+  tokenData.used = true;
+  resetTokenStore.delete(tokenHash);
+  return true;
 }
 
 // POST /api/forgot-password/request - Send verification code
@@ -60,9 +112,16 @@ router.post("/request", async (req, res) => {
   if (!emailValidation.isValid) {
     return sendSafeError(res, 400, emailValidation.message);
   }
-  const cleanEmail = emailValidation.value;
+  const cleanEmail = normalizeEmail(emailValidation.value);
+  if (!validateEmail(cleanEmail)) {
+    return sendSafeError(res, 400, "Format email tidak valid");
+  }
 
   try {
+    if (!isSupabaseConfigured) {
+      return sendSafeError(res, 503, "Layanan atur ulang kata sandi belum dikonfigurasi");
+    }
+
     if (!transporter) {
       return sendSafeError(res, 503, "Layanan email belum dikonfigurasi");
     }
@@ -72,31 +131,34 @@ router.post("/request", async (req, res) => {
       .from("users")
       .select("user_id, email")
       .eq("email", cleanEmail)
-      .single();
+      .maybeSingle();
 
     if (userError || !user) {
-      console.error("User fetch error:", userError?.message || "Pengguna tidak ditemukan");
-      return sendSafeError(res, 404, "Email tidak ditemukan");
+      logger.warn("Forgot-password request skipped for unavailable account", {
+        reason: userError?.message || "not_found",
+      });
+      return res.status(200).json({
+        message: "Jika email terdaftar, kode verifikasi akan dikirim.",
+      });
     }
 
     // Generate code and set expiration
     const code = generateCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+    const expiresAt = new Date(Date.now() + RESET_CODE_TTL_MS).toISOString();
 
     // Store code in reset_codes table
     const { error: codeError } = await supabase
       .from("reset_codes")
       .insert({
         email: cleanEmail,
-        code,
+        code: hashSecret(code),
         expires_at: expiresAt,
+        used: false,
       });
 
     if (codeError) {
-      console.error("Error storing reset code:", codeError.message, codeError.details, codeError.code);
-      return res.status(500).json({
-        error: "Gagal mengirim kode",
-      });
+      logger.error("Error storing reset code", { message: codeError.message, code: codeError.code });
+      return sendSafeError(res, 500, "Gagal mengirim kode");
     }
 
     // Send email
@@ -110,19 +172,16 @@ router.post("/request", async (req, res) => {
 
     try {
       await transporter.sendMail(mailOptions);
-      console.log("Kode verifikasi telah dikirim");
-      return res.status(200).json({ message: "Kode verifikasi telah dikirim" });
-    } catch (mailError) {
-      console.error("Email sending failed:", mailError.message, mailError.stack);
-      return res.status(500).json({
-        error: "Gagal mengirim kode",
+      return res.status(200).json({
+        message: "Jika email terdaftar, kode verifikasi akan dikirim.",
       });
+    } catch (mailError) {
+      logger.error("Email sending failed", { message: mailError.message });
+      return sendSafeError(res, 500, "Gagal mengirim kode");
     }
   } catch (error) {
-    console.error("Error in forgot password request:", error.message, error.stack);
-    return res.status(500).json({
-      error: "Terjadi kesalahan server",
-    });
+    logger.error("Error in forgot password request", { message: error.message });
+    return sendSafeError(res, 500, "Terjadi kesalahan server");
   }
 });
 
@@ -134,20 +193,33 @@ router.post("/verify", async (req, res) => {
   if (!emailValidation.isValid || !codeValidation.isValid) {
     return sendSafeError(res, 400, "Email dan kode wajib diisi");
   }
+  const cleanEmail = normalizeEmail(emailValidation.value);
+  const cleanCode = String(codeValidation.value || "").trim();
+  if (!validateEmail(cleanEmail) || !/^\d{6}$/.test(cleanCode)) {
+    return sendSafeError(res, 400, "Email atau kode tidak valid");
+  }
 
   try {
+    if (!isSupabaseConfigured) {
+      return sendSafeError(res, 503, "Layanan atur ulang kata sandi belum dikonfigurasi");
+    }
+
     // Check if code is valid
-    const { data: resetCode, error: codeError } = await supabase
+    const { data: resetCodes, error: codeError } = await supabase
       .from("reset_codes")
       .select("id, code, expires_at, used")
-      .eq("email", emailValidation.value)
-      .eq("code", codeValidation.value)
+      .eq("email", cleanEmail)
       .eq("used", false)
       .gte("expires_at", new Date().toISOString())
-      .single();
+      .order("expires_at", { ascending: false })
+      .limit(5);
+
+    const resetCode = Array.isArray(resetCodes)
+      ? resetCodes.find((row) => matchesStoredSecret(row.code, cleanCode))
+      : null;
 
     if (codeError || !resetCode) {
-      console.error("Code verification error:", codeError?.message || "Kode tidak valid atau sudah kedaluwarsa");
+      logger.warn("Code verification failed", { reason: codeError?.message || "invalid_or_expired" });
       return sendSafeError(res, 400, "Kode tidak valid atau sudah kedaluwarsa");
     }
 
@@ -158,25 +230,30 @@ router.post("/verify", async (req, res) => {
       .eq("id", resetCode.id);
 
     if (updateError) {
-      console.error("Error marking code as used:", updateError.message);
+      logger.error("Error marking code as used", { message: updateError.message });
       return sendSafeError(res, 500, "Gagal memverifikasi kode");
     }
 
-    console.log("Kode berhasil diverifikasi");
-    return res.status(200).json({ message: "Kode berhasil diverifikasi" });
+    const resetToken = createResetToken(cleanEmail);
+    return res.status(200).json({ message: "Kode berhasil diverifikasi", resetToken });
   } catch (error) {
-    console.error("Error in code verification:", error.message);
+    logger.error("Error in code verification", { message: error.message });
     return sendSafeError(res, 500, "Terjadi kesalahan server");
   }
 });
 
 // POST /api/forgot-password/reset - Reset password
 router.post("/reset", async (req, res) => {
-  const { email, newPassword } = req.body;
+  const { email, newPassword, resetToken } = req.body;
   const emailValidation = validateRequiredText(email, "Email", 254);
   const passwordLengthValidation = validateRequiredText(newPassword, "Kata sandi baru", 128);
-  if (!emailValidation.isValid || !passwordLengthValidation.isValid) {
-    return sendSafeError(res, 400, "Email dan kata sandi baru wajib diisi");
+  const tokenValidation = validateRequiredText(resetToken, "Token reset", 200);
+  if (!emailValidation.isValid || !passwordLengthValidation.isValid || !tokenValidation.isValid) {
+    return sendSafeError(res, 400, "Email, kata sandi baru, dan token reset wajib diisi");
+  }
+  const cleanEmail = normalizeEmail(emailValidation.value);
+  if (!validateEmail(cleanEmail)) {
+    return sendSafeError(res, 400, "Format email tidak valid");
   }
 
   try {
@@ -186,16 +263,24 @@ router.post("/reset", async (req, res) => {
       return sendSafeError(res, 400, passwordValidation.message);
     }
 
+    if (!isSupabaseConfigured) {
+      return sendSafeError(res, 503, "Layanan atur ulang kata sandi belum dikonfigurasi");
+    }
+
+    if (!consumeResetToken(cleanEmail, tokenValidation.value)) {
+      return sendSafeError(res, 400, "Token reset tidak valid atau sudah kedaluwarsa");
+    }
+
     // Check if user exists
     const { data: user, error: userError } = await supabase
       .from("users")
       .select("user_id, password")
-      .eq("email", emailValidation.value)
-      .single();
+      .eq("email", cleanEmail)
+      .maybeSingle();
 
     if (userError || !user) {
-      console.error("User fetch error:", userError?.message || "Pengguna tidak ditemukan");
-      return sendSafeError(res, 404, "Pengguna tidak ditemukan");
+      logger.warn("Password reset user lookup failed", { reason: userError?.message || "not_found" });
+      return sendSafeError(res, 400, "Token reset tidak valid atau sudah kedaluwarsa");
     }
 
     // Check if new password is different
@@ -214,14 +299,13 @@ router.post("/reset", async (req, res) => {
       .eq("user_id", user.user_id);
 
     if (updateError) {
-      console.error("Error updating password:", updateError.message);
+      logger.error("Error updating password", { message: updateError.message });
       return sendSafeError(res, 500, "Gagal mengatur ulang kata sandi");
     }
 
-    console.log("Password reset completed");
     return res.status(200).json({ message: "Kata sandi berhasil diatur ulang" });
   } catch (error) {
-    console.error("Error in password reset:", error.message);
+    logger.error("Error in password reset", { message: error.message });
     return sendSafeError(res, 500, "Terjadi kesalahan server");
   }
 });

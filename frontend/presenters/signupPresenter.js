@@ -1,5 +1,10 @@
 import { apiCall } from '../config.js';
 import { hideGlobalLoading, setButtonLoading, showGlobalLoading } from '../utils/loading.js';
+import {
+  validateConfirmPassword,
+  validateEmail,
+  validatePassword,
+} from '../utils/validation.js';
 
 export function renderSignup() {
   fetch("/views/signupView.html")
@@ -50,14 +55,20 @@ function attachSignupListeners() {
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!validateEmail(email)) {
       showError("Masukkan alamat email yang valid.");
       return;
     }
 
-    if (password !== confirmPassword) {
-      showError("Kata sandi tidak cocok.");
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      showError(passwordValidation.message);
+      return;
+    }
+
+    const confirmValidation = validateConfirmPassword(password, confirmPassword);
+    if (!confirmValidation.isValid) {
+      showError(confirmValidation.message);
       return;
     }
 
@@ -73,7 +84,7 @@ function attachSignupListeners() {
         message: 'Sebentar ya, pendaftaran Anda sedang diproses.',
       });
 
-      const data = await apiCall('/api/auth/register', {
+      await apiCall('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, email, password }),
       });
@@ -85,7 +96,6 @@ function attachSignupListeners() {
       }
 
     } catch (error) {
-      console.error('Registration error:', error);
       showError(error.message);
     } finally {
       hideGlobalLoading();

@@ -12,6 +12,7 @@ import {
 } from "../utils/dynamicWeighting.js";
 import { buildRecommendationAnalysis } from "../utils/recommendations.js";
 import { buildVideoRecommendations } from "../utils/videoRecommendations.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 const PROTECTED_FIELD_MARKER = "[protected in encrypted metadata]";
@@ -308,7 +309,7 @@ router.post("/fusion", createRateLimiter(), authenticateToken, async (req, res) 
     responseData.history_id = historyEntry.history_id;
     return res.status(201).json(responseData);
   } catch (error) {
-    console.error("Error saving fused history:", error);
+    logger.error("Error saving fused history", { message: error.message, code: error.code });
     return sendSafeError(res, 500, "Gagal menyimpan hasil akhir");
   }
 });
@@ -377,7 +378,7 @@ router.post("/", createRateLimiter(), authenticateToken, async (req, res) => {
 
     res.status(201).json(decryptHistoryEntry(historyEntry));
   } catch (error) {
-    console.error("Error saving history:", error);
+    logger.error("Error saving history", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal menyimpan riwayat");
   }
 });
@@ -395,14 +396,13 @@ router.get("/", authenticateToken, async (req, res) => {
 
     res.json(decryptHistoryEntries(history));
   } catch (error) {
-    console.error("Error fetching history:", error);
+    logger.error("Error fetching history", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal mengambil riwayat");
   }
 });
 
 // Delete one history item owned by the authenticated user
 async function deleteHistoryById(req, res) {
-  console.log("DELETE history hit:", req.params.id);
   const historyId = normalizeHistoryId(req.params.id);
 
   if (!historyId) {
@@ -436,7 +436,7 @@ async function deleteHistoryById(req, res) {
       history_id: deletedEntry.history_id,
     });
   } catch (error) {
-    console.error("Error deleting history:", error);
+    logger.error("Error deleting history", { message: error.message, code: error.code });
     return res.status(500).json({
       success: false,
       message: "Gagal menghapus riwayat",
@@ -444,7 +444,6 @@ async function deleteHistoryById(req, res) {
   }
 }
 
-console.log("DELETE /api/history/:id route loaded");
 router.delete("/:id", authenticateToken, deleteHistoryById);
 // Compatibility for older server mounts that used app.use("/api", historyRoutes).
 router.delete("/history/:id", authenticateToken, deleteHistoryById);
@@ -453,7 +452,6 @@ router.delete("/history/:id", authenticateToken, deleteHistoryById);
 router.get("/:historyId", authenticateToken, async (req, res) => {
   try {
     const historyId = normalizeHistoryId(req.params.historyId);
-    console.log(`Fetching history item: historyId=${historyId}, userId=${req.user.user_id}`);
 
     if (!historyId) {
       return sendSafeError(res, 400, "ID riwayat tidak valid");
@@ -476,17 +474,16 @@ router.get("/:historyId", authenticateToken, async (req, res) => {
       .single();
 
     if (error) {
-      console.error('Supabase error:', error);
+      logger.warn("History item fetch failed", { message: error.message, code: error.code });
       if (error.code === 'PGRST116') {
         return sendSafeError(res, 404, "Item riwayat tidak ditemukan");
       }
       throw error;
     }
 
-    console.log('History item found');
     res.json(decryptHistoryEntry(historyItem));
   } catch (error) {
-    console.error("Error fetching history item:", error.message, error.stack);
+    logger.error("Error fetching history item", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal mengambil item riwayat");
   }
 });

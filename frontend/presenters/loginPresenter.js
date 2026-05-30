@@ -1,5 +1,6 @@
-import { apiCall } from '../config.js';
+import { apiCall, getAuthToken, setAuthSession } from '../config.js';
 import { hideGlobalLoading, setButtonLoading, showGlobalLoading } from '../utils/loading.js';
+import { validateEmail } from '../utils/validation.js';
 
 export function renderLogin() {
   fetch("/views/loginView.html")
@@ -47,6 +48,11 @@ function attachLoginListeners() {
       return;
     }
 
+    if (!validateEmail(email)) {
+      showError("Masukkan alamat email yang valid.");
+      return;
+    }
+
     try {
       setButtonLoading(loginButton, true, 'Memuat...');
       showGlobalLoading({
@@ -62,6 +68,8 @@ function attachLoginListeners() {
 
       // Success - use the updated login function
       if (data.token && data.user) {
+        setAuthSession(data.user, data.token);
+
         // Call the existing login function with user data and token
         if (window.login) {
           window.login(data.user, data.token);
@@ -79,7 +87,6 @@ function attachLoginListeners() {
 
       clearError();
     } catch (error) {
-      console.error('Login error:', error);
       showError(error.message);
     } finally {
       hideGlobalLoading();
@@ -112,9 +119,8 @@ function attachLoginListeners() {
 
 // Fetch user profile to process profile picture
 async function fetchUserProfile() {
-  const token = sessionStorage.getItem('token');
+  const token = getAuthToken();
   if (!token) {
-    console.warn('No token found, skipping profile fetch');
     return;
   }
 
@@ -132,7 +138,6 @@ async function fetchUserProfile() {
       updateNavbarUI(user);
     }
   } catch (error) {
-    console.error('Error fetching user profile:', error);
     // Fallback to cached user data
     const cachedUser = JSON.parse(sessionStorage.getItem('user') || '{}');
     if (cachedUser) {
@@ -165,9 +170,7 @@ function handleProfileImageDisplay(imageElement, user) {
             imageElement.src = url;
             return;
           }
-        } catch (hexError) {
-          console.error('Error decoding hex string:', hexError);
-        }
+        } catch {}
       }
     }
 
@@ -181,12 +184,10 @@ function handleProfileImageDisplay(imageElement, user) {
 
     imageElement.src = defaultImage;
     imageElement.onerror = () => {
-      console.warn('Failed to load profile image, using default');
       imageElement.src = defaultImage;
       imageElement.onerror = null;
     };
   } catch (error) {
-    console.error('Error displaying profile image:', error);
     imageElement.src = defaultImage;
   }
 }
@@ -205,7 +206,6 @@ function convertBinaryToBase64(binaryData) {
     } else if (Array.isArray(binaryData)) {
       bytes = new Uint8Array(binaryData);
     } else {
-      console.warn('Unknown binary data format:', typeof binaryData);
       return null;
     }
 
@@ -217,14 +217,12 @@ function convertBinaryToBase64(binaryData) {
 
     return 'data:image/jpeg;base64,' + btoa(binary);
   } catch (error) {
-    console.error('Error converting binary to base64:', error);
     return null;
   }
 }
 
 function updateNavbarUI(user) {
   if (!user) {
-    console.warn('No user data provided to updateNavbarUI');
     return;
   }
 

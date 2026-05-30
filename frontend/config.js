@@ -1,4 +1,4 @@
-// Enhanced config.js with better error handling, debugging, and authentication
+// Central API and auth-session helpers for the vanilla frontend.
 function normalizeBaseUrl(value) {
   return String(value || '').trim().replace(/\/+$/, '');
 }
@@ -21,7 +21,7 @@ const UNAUTHENTICATED_ENDPOINTS = [
 // Generic API call function
 export async function apiCall(endpoint, options = {}) {
   const baseUrl = API_BASE_URL; // Empty base URL falls back to same-origin API paths.
-  const token = sessionStorage.getItem('token');
+  const token = getAuthToken();
   const {
     timeoutMs = DEFAULT_API_TIMEOUT_MS,
     signal: externalSignal,
@@ -51,8 +51,6 @@ export async function apiCall(endpoint, options = {}) {
   }
 
   try {
-    console.log(`API Call: ${options.method || 'GET'} ${url}`); // Log the request
-
     const response = await fetch(url, {
       ...requestOptions,
       headers: headers,
@@ -72,7 +70,6 @@ export async function apiCall(endpoint, options = {}) {
       } catch (e) {
         errorMessage = `Gagal membaca respons kesalahan: ${e.message}`;
       }
-      console.error(`API Call failed for ${endpoint}: HTTP ${response.status} - ${errorMessage}`);
       throw new Error(errorMessage);
     }
 
@@ -81,12 +78,10 @@ export async function apiCall(endpoint, options = {}) {
       return await response.json();
     } else {
       const responseText = await response.text();
-      console.warn(`Non-JSON response for ${endpoint}:`, responseText);
       return responseText; // Or handle as needed
     }
 
   } catch (error) {
-    console.error('API Call failed for', endpoint, ':', error);
     if (error?.name === 'AbortError') {
       throw new Error('Permintaan membutuhkan waktu lebih lama dari biasanya. Silakan coba lagi sebentar.');
     }
@@ -105,7 +100,7 @@ export async function authenticatedApiCall(endpoint, options = {}) {
     options = { method: options };
   }
 
-  const token = sessionStorage.getItem('token');
+  const token = getAuthToken();
 
   if (!token) {
     throw new Error('Token autentikasi tidak ditemukan. Silakan masuk kembali.');
@@ -123,9 +118,7 @@ export async function authenticatedApiCall(endpoint, options = {}) {
 // Add a utility function to test the API connection
 export async function testApiConnection() {
   try {
-    console.log('Testing API connection...');
-    const result = await apiCall('/api/test-db');
-    console.log('API connection test successful:', result);
+    await apiCall('/api/test-db');
     return true;
   } catch (error) {
     console.error('API connection test failed:', error);
@@ -136,9 +129,7 @@ export async function testApiConnection() {
 // Add a utility function to check server health
 export async function checkServerHealth() {
   try {
-    console.log('Checking server health...');
-    const result = await apiCall('/');
-    console.log('Server health check successful:', result);
+    await apiCall('/');
     return true;
   } catch (error) {
     console.error('Server health check failed:', error);
@@ -148,7 +139,7 @@ export async function checkServerHealth() {
 
 // Utility function to check if user is authenticated
 export function isAuthenticated() {
-  const token = sessionStorage.getItem('token');
+  const token = getAuthToken();
   const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
   return !!(token && isLoggedIn);
 }
@@ -159,10 +150,23 @@ export function getCurrentUser() {
   return userStr ? JSON.parse(userStr) : null;
 }
 
-// Utility function to clear authentication
-export function clearAuth() {
+export function getAuthToken() {
+  return sessionStorage.getItem("token");
+}
+
+export function setAuthSession(user, token) {
+  sessionStorage.setItem("isLoggedIn", "true");
+  sessionStorage.setItem("user", JSON.stringify(user));
+  sessionStorage.setItem("token", token);
+}
+
+export function clearAuthSession() {
   sessionStorage.removeItem("isLoggedIn");
   sessionStorage.removeItem("user");
   sessionStorage.removeItem("token");
-  console.log('Authentication cleared');
+}
+
+// Utility function to clear authentication
+export function clearAuth() {
+  clearAuthSession();
 }

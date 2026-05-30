@@ -108,7 +108,6 @@ export function renderHistory() {
     })
     .then((html) => {
       document.getElementById("app").innerHTML = html;
-      console.log("History view loaded, initializing...");
       initializeHistory();
     })
     .catch((err) => {
@@ -242,7 +241,6 @@ class HistoryPresenter {
   }
 
   filterHistory(filterValue) {
-    console.log('Filtering by:', filterValue);
     this.currentFilter = filterValue;
     if (filterValue === 'all') {
       this.view.renderHistoryContent(this.filteredHistory);
@@ -280,7 +278,6 @@ class HistoryPresenter {
   }
 
   showDetail(historyId) {
-    console.log('showDetail called with historyId:', historyId);
     renderHistoryDetail(historyId);
   }
 
@@ -488,7 +485,6 @@ class HistoryView {
       button.addEventListener('click', (e) => {
         e.stopPropagation();
         const historyId = button.dataset.historyId;
-        console.log('Detail button clicked for history ID:', historyId);
         this.presenter.showDetail(historyId);
       });
     });

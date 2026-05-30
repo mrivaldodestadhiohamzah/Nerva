@@ -5,6 +5,7 @@ import { isSupabaseConfigured, supabase } from "../supabaseClient.js";
 import { authenticateToken } from "../middleware/auth.js";
 import { generateToken, generateId, validateEmail, validatePassword, validateName } from "../utils/helpers.js";
 import { createRateLimiter, sendSafeError, validateRequiredText } from "../utils/security.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 const authLimiter = createRateLimiter();
@@ -44,7 +45,6 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024, // 5MB limit
     },
     fileFilter: (req, file, cb) => {
-        console.log("File filter check:", file.mimetype);
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
@@ -106,7 +106,10 @@ router.post("/register", authLimiter, async (req, res) => {
             .maybeSingle();
 
         if (checkError) {
-            console.error("Database check error:", checkError);
+            logger.error("Database check error during registration", {
+                message: checkError.message,
+                code: checkError.code,
+            });
             return sendSafeError(res, 500, "Terjadi kesalahan database");
         }
 
@@ -142,7 +145,7 @@ router.post("/register", authLimiter, async (req, res) => {
             token
         });
     } catch (error) {
-        console.error("Registration error:", error);
+        logger.error("Registration error", { message: error.message, code: error.code });
         sendSafeError(res, 500, "Pendaftaran gagal");
     }
 });
@@ -193,7 +196,10 @@ router.post("/login", authLimiter, async (req, res) => {
             .maybeSingle();
 
         if (error) {
-            console.error("Terjadi kesalahan database:", error);
+            logger.error("Database check error during login", {
+                message: error.message,
+                code: error.code,
+            });
             return sendSafeError(res, 500, "Terjadi kesalahan database");
         }
 
@@ -223,7 +229,7 @@ router.post("/login", authLimiter, async (req, res) => {
             token
         });
     } catch (error) {
-        console.error("Login error:", error);
+        logger.error("Login error", { message: error.message, code: error.code });
         sendSafeError(res, 500, "Gagal masuk");
     }
 });

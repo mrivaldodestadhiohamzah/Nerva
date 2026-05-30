@@ -1,13 +1,14 @@
 import jwt from 'jsonwebtoken';
 import "../utils/env.js";
 import { getJwtSecret } from '../utils/helpers.js';
+import { logger } from '../utils/logger.js';
 
 
 export const authenticateToken = (req, res, next) => {
     const jwtSecret = getJwtSecret();
 
     if (!jwtSecret) {
-        console.error("Missing JWT_SECRET environment variable");
+        logger.error("Missing JWT_SECRET environment variable");
         return res.status(500).json({ error: "Server authentication is not configured" });
     }
 
@@ -15,7 +16,6 @@ export const authenticateToken = (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token == null) {
-        console.log("No token provided");
         return res.status(401).json({
             success: false,
             message: "Tidak memiliki akses"
@@ -24,14 +24,13 @@ export const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, jwtSecret, (err, user) => {
         if (err) {
-            console.error("Token verification failed:", err.message);
+            logger.warn("Token verification failed", { message: err.message });
             return res.status(403).json({
                 success: false,
                 message: "Tidak memiliki akses"
             });
         }
 
-        console.log("Token verified successfully");
         req.user = user;
         next();
     });

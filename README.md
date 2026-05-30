@@ -61,6 +61,12 @@ Run the frontend on `http://localhost:5173`:
 npm run dev
 ```
 
+Run the backend API tests:
+
+```bash
+npm test
+```
+
 For production later, only change environment values:
 
 ```env
@@ -79,3 +85,9 @@ FRONTEND_URL=https://nervargd.vercel.app
 - Backend: deploy the `backend/` folder to Render or Railway.
 - Configure backend `ALLOWED_ORIGINS` to include the deployed frontend URL.
 - Configure frontend `VITE_API_BASE_URL` to point to the deployed backend URL.
+
+## Security And Testing Notes
+
+See `SECURITY_AND_TESTING.md` for the forgot-password reset-token flow,
+validation rules, required environment variables, token/session notes, and
+files that must not be committed.

@@ -4,6 +4,7 @@ import { authenticateToken } from "../middleware/auth.js";
 import { generateId } from "../utils/helpers.js";
 import { sendSafeError, validateRequiredText } from "../utils/security.js";
 import { decryptHistoryEntries, decryptHistoryEntry, encryptText } from "../utils/encryption.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 const PROTECTED_FIELD_MARKER = "[protected in encrypted metadata]";
@@ -30,7 +31,7 @@ router.get("/feedback", authenticateToken, async (req, res) => {
 
     res.json(feedback);
   } catch (error) {
-    console.error("Error fetching feedback:", error);
+    logger.error("Error fetching feedback", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal mengambil masukan");
   }
 });
@@ -87,7 +88,7 @@ router.post("/feedback", authenticateToken, async (req, res) => {
       created_at: historyEntry.created_at
     });
   } catch (error) {
-    console.error("Error creating feedback:", error);
+    logger.error("Error creating feedback", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal membuat masukan");
   }
 });
@@ -119,7 +120,7 @@ router.get("/feedback/:id", authenticateToken, async (req, res) => {
 
     res.json(feedback);
   } catch (error) {
-    console.error("Error fetching feedback:", error);
+    logger.error("Error fetching feedback", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal mengambil masukan");
   }
 });
@@ -139,7 +140,7 @@ router.delete("/feedback/:id", authenticateToken, async (req, res) => {
 
     res.status(204).end();
   } catch (error) {
-    console.error("Error deleting feedback:", error);
+    logger.error("Error deleting feedback", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal menghapus masukan");
   }
 });

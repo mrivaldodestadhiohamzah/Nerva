@@ -1,4 +1,3 @@
-console.log('historyDetailPresenter.js loaded');
 
 import { authenticatedApiCall } from '../config.js';
 import { hideGlobalLoading, renderPageLoading, showGlobalLoading } from '../utils/loading.js';
@@ -230,7 +229,6 @@ function buildFriendlyFusionExplanation(fusion = {}) {
 }
 
 export async function renderHistoryDetail(historyId) {
-  console.log('renderHistoryDetail called with historyId:', historyId);
   
   // Validate historyId first
   if (!historyId || historyId === 'undefined' || historyId === 'null') {
@@ -312,7 +310,6 @@ function loadView(view) {
 
 async function loadHistoryDetail(historyId) {
   try {
-    console.log('Loading history detail for ID:', historyId);
     showGlobalLoading({
       title: 'Memuat detail riwayat...',
       message: 'Sebentar ya, detail hasil Anda sedang disiapkan.',

@@ -769,7 +769,6 @@ function logout() {
   
   localStorage.clear();
   sessionStorage.removeItem("isLoggedIn");
-  console.log("User logged out, session cleared");
   loadView("home");
 }
 

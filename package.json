@@ -5,7 +5,8 @@
   "main": "backend/server.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm run test:backend",
+    "test:backend": "npm --prefix backend test",
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
     "preview": "npm --prefix frontend run preview",

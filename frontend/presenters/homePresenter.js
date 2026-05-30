@@ -12,7 +12,11 @@ export function renderHome() {
 
 function isCurrentSessionAuthenticated() {
   const hasLoginFlag = sessionStorage.getItem('isLoggedIn') === 'true';
-  const hasToken = Boolean(sessionStorage.getItem('token'));
+  const hasToken = Boolean(
+    typeof window.getAuthToken === 'function'
+      ? window.getAuthToken()
+      : sessionStorage.getItem('token')
+  );
 
   if (hasLoginFlag && !hasToken) {
     sessionStorage.removeItem('isLoggedIn');

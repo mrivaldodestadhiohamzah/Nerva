@@ -8,7 +8,8 @@
     "start": "node server.js",
     "server": "node server.js",
     "ml:local": "node ml-server.js",
-    "test:weights": "node scripts/test-dynamic-weighting.js"
+    "test:weights": "node scripts/test-dynamic-weighting.js",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",

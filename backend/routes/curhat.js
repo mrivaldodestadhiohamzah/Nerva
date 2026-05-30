@@ -3,6 +3,7 @@ import axios from "axios";
 import { authenticateToken } from "../middleware/auth.js";
 import { createRateLimiter, sendSafeError, validateRequiredText } from "../utils/security.js";
 import { buildVideoRecommendations } from "../utils/videoRecommendations.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -21,12 +22,6 @@ function buildMlAnalyzeUrl() {
 
 router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) => {
   const { text } = req.body;
-  const user_id = req.user.user_id; // Get from authenticated token
-
-  console.log("Received curhat request:", {
-    user_id: user_id || "No user_id",
-    textLength: text ? text.length : 0
-  });
 
   const textValidation = validateRequiredText(text, "Teks");
   if (!textValidation.isValid) {
@@ -35,8 +30,8 @@ router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) 
 
   const cleanText = textValidation.value;
 
-  if (cleanText.length < 10) {
-    return sendSafeError(res, 400, "Teks minimal 10 karakter");
+  if (cleanText.length < 50) {
+    return sendSafeError(res, 400, "Teks minimal 50 karakter");
   }
 
   try {
@@ -46,7 +41,6 @@ router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) 
       return sendSafeError(res, 503, "ML API belum dikonfigurasi");
     }
 
-    console.log("Calling ML API:", mlAnalyzeUrl);
     const { data: mlResult } = await axios.post(
       mlAnalyzeUrl,
       { text: cleanText },
@@ -57,11 +51,9 @@ router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) 
         maxBodyLength: 1024 * 1024,
       }
     );
-    console.log("ML API Success");
-
     // Validate ML response structure
     if (!mlResult || typeof mlResult !== 'object') {
-      console.error("Invalid ML response format:", typeof mlResult);
+      logger.error("Invalid ML response format", { type: typeof mlResult });
       return sendSafeError(res, 500, "Respons dari ML API tidak valid");
     }
 
@@ -85,34 +77,30 @@ router.post("/curhat", createRateLimiter(), authenticateToken, async (req, res) 
       }
     };
 
-    console.log("Processed response data:", {
+    logger.debug("ML curhat analysis completed", {
       stress_label: responseData.predicted_stress.label,
       stress_percent: responseData.stress_level.stress_level,
-      videos_count: recommendations.length
+      videos_count: recommendations.length,
     });
 
     responseData.saved_to_history = false;
     responseData.pending_dass21 = true;
 
-    console.log("Sending response to frontend");
     res.json(responseData);
 
   } catch (error) {
-    console.error("Error in /api/curhat:", error.message);
+    logger.error("Error in /api/curhat", { message: error.message });
     
     if (error.code === 'ECONNABORTED') {
-      console.error("ML API request timed out");
       return sendSafeError(res, 408, "ML API terlalu lama merespons. Silakan coba lagi.");
     }
     
     if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-      console.error("Tidak dapat terhubung ke ML API");
       return sendSafeError(res, 503, "Tidak dapat terhubung ke ML API");
     }
     
     if (error.response) {
-      console.error("ML API Error Response Status:", error.response.status);
-      
+      logger.warn("ML API returned an error", { status: error.response.status });
       return sendSafeError(res, 500, "ML API mengembalikan kesalahan");
     }
     

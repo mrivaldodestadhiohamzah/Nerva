@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { backendRootDir, frontendRootDir } from "./utils/env.js";
+import { logger } from "./utils/logger.js";
 
 import profileRoutes from "./routes/profile.js";
 import authRoutes from "./routes/auth.js";
@@ -127,7 +128,10 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", (req, res, next) => {
-  if (!isSupabaseConfigured && !req.path.startsWith('/auth')) {
+  const routeHandlesOwnConfig =
+    req.path.startsWith('/auth') || req.path.startsWith('/forgot-password');
+
+  if (!isSupabaseConfigured && !routeHandlesOwnConfig) {
     return sendSafeError(res, 503, "Backend database is not configured");
   }
 
@@ -152,7 +156,7 @@ app.use("/api", (req, res) => {
 });
 
 app.use((err, req, res, _next) => {
-  console.error("Unhandled backend error:", {
+  logger.error("Unhandled backend error", {
     path: req.path,
     method: req.method,
     message: err.message,
@@ -161,6 +165,13 @@ app.use((err, req, res, _next) => {
   sendSafeError(res, err.status || 500, "Request failed");
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend server is running on http://localhost:${PORT}`);
-});
+const isMainModule =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isMainModule) {
+  app.listen(PORT, () => {
+    logger.info(`Backend server is running on http://localhost:${PORT}`);
+  });
+}
+
+export { app };

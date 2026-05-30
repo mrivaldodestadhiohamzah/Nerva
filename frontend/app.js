@@ -7,7 +7,12 @@ import { renderDashboard } from './presenters/dashboardPresenter.js';
 import { renderForgetPass } from './presenters/forgetPassPresenter.js';
 import { renderHistory } from './presenters/historyPresenter.js';
 import { renderAccount } from './presenters/accountPresenter.js';
-import { apiCall } from './config.js';
+import {
+    apiCall,
+    clearAuthSession,
+    getAuthToken,
+    setAuthSession,
+} from './config.js';
 import { renderDass21 } from './presenters/dass21Presenter.js';
 
 const nervaLogoUrl = new URL('./assets/NervaLogo.png', import.meta.url).href;
@@ -17,16 +22,15 @@ if ('scrollRestoration' in window.history) {
 }
 
 function hasValidAuthSession() {
-    return sessionStorage.getItem('isLoggedIn') === 'true' && !!sessionStorage.getItem('token');
+    return sessionStorage.getItem('isLoggedIn') === 'true' && !!getAuthToken();
 }
 
 function normalizeAuthSession() {
     const hasLoginFlag = sessionStorage.getItem('isLoggedIn') === 'true';
-    const hasToken = !!sessionStorage.getItem('token');
+    const hasToken = !!getAuthToken();
 
     if (hasLoginFlag && !hasToken) {
-        sessionStorage.removeItem('isLoggedIn');
-        sessionStorage.removeItem('user');
+        clearAuthSession();
         return false;
     }
 
@@ -62,9 +66,7 @@ function handleProfileImageDisplay(imageElement, userImage) {
                         imageElement.src = url;
                         return;
                     }
-                } catch (hexError) {
-                    console.error('Error decoding hex string:', hexError);
-                }
+                } catch {}
             }
         }
         if (userImage && typeof userImage === 'object' && userImage.data) {
@@ -79,8 +81,7 @@ function handleProfileImageDisplay(imageElement, userImage) {
             imageElement.src = defaultImage;
             imageElement.onerror = null;
         };
-    } catch (error) {
-        console.error('Error displaying profile image:', error);
+    } catch {
         imageElement.src = defaultImage;
     }
 }
@@ -97,7 +98,6 @@ function convertBinaryToBase64(binaryData) {
         } else if (Array.isArray(binaryData)) {
             bytes = new Uint8Array(binaryData);
         } else {
-            console.warn('Unknown binary data format:', typeof binaryData);
             return null;
         }
         const chunkSize = 8192;
@@ -106,8 +106,7 @@ function convertBinaryToBase64(binaryData) {
             binary += String.fromCharCode.apply(null, chunk);
         }
         return 'data:image/jpeg;base64,' + btoa(binary);
-    } catch (error) {
-        console.error('Error converting binary to base64:', error);
+    } catch {
         return null;
     }
 }
@@ -115,7 +114,6 @@ function convertBinaryToBase64(binaryData) {
 window.updateNavbar = async function () {
     const navbarContainer = document.getElementById('navbar-container');
     if (!navbarContainer) {
-        console.error('Navbar container not found');
         return;
     }
     const isLoggedIn = window.isUserLoggedIn();
@@ -145,7 +143,7 @@ window.updateNavbar = async function () {
             if (cachedUser) {
                 updateNavbarUI(cachedUser);
             }
-            fetchUserProfile().catch(console.error);
+            fetchUserProfile().catch(() => {});
         }
     } catch (error) {
         console.error('Error updating navbar:', error);
@@ -203,7 +201,6 @@ function setActiveNavLink() {
 
 function updateNavbarUI(user) {
     if (!user) {
-        console.warn("No user data provided to updateNavbarUI");
         return;
     }
     const profileImage = document.getElementById("profile-image");
@@ -217,7 +214,7 @@ function updateNavbarUI(user) {
 }
 
 async function fetchUserProfile() {
-    const token = sessionStorage.getItem('token');
+    const token = getAuthToken();
     if (!token) return;
     try {
         const result = await apiCall('/api/profile', {
@@ -230,9 +227,7 @@ async function fetchUserProfile() {
             sessionStorage.setItem('user', JSON.stringify(result.user));
             updateNavbarUI(result.user);
         }
-    } catch (error) {
-        console.error('Error fetching user profile:', error);
-    }
+    } catch {}
 }
 
 function normalizeSectionTarget(sectionTarget) {
@@ -293,8 +288,6 @@ window.loadView = function (view, sectionTarget = null) {
     }
 
     const isLoggedIn = normalizeAuthSession();
-    console.log(`Attempting to load view: ${view}`);
-    console.log(`isLoggedIn: ${isLoggedIn}`);
     
     if (view === 'signup' || view === 'login' || view === 'forgetpassword' || view === 'terms' || view === 'privacy') {
         document.body.classList.add('no-navbar');
@@ -385,25 +378,16 @@ window.addEventListener('hashchange', setActiveNavLink);
 
 
 window.login = async function (userData, token) {
-    sessionStorage.setItem('isLoggedIn', 'true');
-    if (userData) {
-        sessionStorage.setItem('user', JSON.stringify(userData));
+    if (userData && token) {
+        setAuthSession(userData, token);
     }
-    if (token) {
-        sessionStorage.setItem('token', token);
-    }
-    console.log('User logged in, isLoggedIn set to true');
-    console.log('User data:', userData);
     updateNavbarUI(userData);
     await window.updateNavbar();
     loadView('curhat');
 };
 
 window.logout = function () {
-    sessionStorage.removeItem('isLoggedIn');
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('token');
-    console.log('User logged out');
+    clearAuthSession();
     window.updateNavbar();
     loadView('home');
 };
@@ -414,7 +398,7 @@ window.getCurrentUser = function () {
 };
 
 window.getAuthToken = function () {
-    return sessionStorage.getItem('token');
+    return getAuthToken();
 };
 
 window.isUserLoggedIn = function () {
@@ -423,6 +407,5 @@ window.isUserLoggedIn = function () {
 
 window.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = normalizeAuthSession();
-    console.log(`DOMContentLoaded: isLoggedIn = ${isLoggedIn}`);
     loadView(isLoggedIn ? 'curhat' : 'home');
 });

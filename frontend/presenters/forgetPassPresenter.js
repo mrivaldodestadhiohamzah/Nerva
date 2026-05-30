@@ -1,4 +1,12 @@
 import { apiCall } from "../config.js";
+import {
+  validateConfirmPassword,
+  validateEmail,
+  validatePassword,
+  validateResetCode,
+} from "../utils/validation.js";
+
+let passwordResetToken = "";
 
 export function renderForgetPass() {
   return fetch('/views/forgetPasswordView.html')
@@ -27,26 +35,18 @@ function setupEventListeners() {
 
   if (sendCodeBtn && emailStage) {
     emailStage.addEventListener("submit", (e) => handleSendCode(e, sendCodeBtn));
-  } else {
-    console.error("sendCodeBtn not found in DOM");
   }
   if (verifyCodeBtn && codeStage) {
     codeStage.addEventListener("submit", (e) => handleVerifyCode(e, verifyCodeBtn));
-  } else {
-    console.error("verifyCodeBtn not found in DOM");
   }
   if (resetPasswordBtn && passwordStage) {
     passwordStage.addEventListener("submit", (e) => handleResetPassword(e, resetPasswordBtn));
-  } else {
-    console.error("resetPasswordBtn not found in DOM");
   }
   if (backToLoginLink) {
     backToLoginLink.addEventListener("click", (e) => {
       e.preventDefault();
       window.loadView("login");
     });
-  } else {
-    console.error("backToLoginLink not found in DOM");
   }
 }
 
@@ -56,29 +56,22 @@ async function handleSendCode(event, button) {
   const email = emailInput?.value.trim();
   clearErrors();
 
-  console.log("handleSendCode started with email:", email);
-
   if (!email) {
     showError("email-error", "Email wajib diisi");
-    alert("Email wajib diisi");
     return;
   }
 
-  if (!/\S+@\S+\.\S+/.test(email)) {
+  if (!validateEmail(email)) {
     showError("email-error", "Format email tidak valid");
-    alert("Format email tidak valid");
     return;
   }
 
   if (!button) {
-    console.error("Button reference is undefined in handleSendCode");
     showError("email-error", "Terjadi kesalahan internal");
-    alert("Terjadi kesalahan internal");
     return;
   }
 
   showLoading(true, button);
-  console.log("Sending request to /api/forgot-password/request with email:", email);
 
   try {
     const response = await apiCall("/api/forgot-password/request", {
@@ -87,22 +80,16 @@ async function handleSendCode(event, button) {
       body: JSON.stringify({ email }),
     });
 
-    console.log("API response received:", response);
-
     if (!response.message) {
       throw new Error("Respons server tidak valid");
     }
 
     toggleStage("code-stage");
     showSuccess("Kode verifikasi telah dikirim ke email Anda");
-    alert("Kode verifikasi telah dikirim ke email Anda.");
   } catch (error) {
-    console.error("API call failed:", error);
     showError("email-error", error.message || "Gagal mengirim kode");
-    alert(`Gagal mengirim kode: ${error.message || "Terjadi kesalahan"}`);
   } finally {
     showLoading(false, button);
-    console.log("handleSendCode completed");
   }
 }
 
@@ -118,13 +105,12 @@ async function handleVerifyCode(event, button) {
     return;
   }
 
-  if (!/^\d{6}$/.test(code)) {
+  if (!validateResetCode(code)) {
     showError("code-error", "Kode harus berupa 6 digit angka");
     return;
   }
 
   if (!button) {
-    console.error("Button reference is undefined in handleVerifyCode");
     showError("code-error", "Terjadi kesalahan internal");
     return;
   }
@@ -138,10 +124,11 @@ async function handleVerifyCode(event, button) {
       body: JSON.stringify({ email, code }),
     });
 
-    if (!response.message) {
+    if (!response.message || !response.resetToken) {
       throw new Error("Respons server tidak valid");
     }
 
+    passwordResetToken = response.resetToken;
     toggleStage("password-stage");
     showSuccess("Kode berhasil diverifikasi");
   } catch (error) {
@@ -172,13 +159,19 @@ async function handleResetPassword(event, button) {
     return;
   }
 
-  if (newPassword !== confirmPassword) {
-    showError("confirm-password-error", "Kata sandi tidak cocok");
+  const confirmValidation = validateConfirmPassword(newPassword, confirmPassword);
+  if (!confirmValidation.isValid) {
+    showError("confirm-password-error", confirmValidation.message);
+    return;
+  }
+
+  if (!passwordResetToken) {
+    showError("new-password-error", "Sesi atur ulang kata sandi sudah kedaluwarsa. Silakan verifikasi kode lagi.");
+    toggleStage("code-stage");
     return;
   }
 
   if (!button) {
-    console.error("Button reference is undefined in handleResetPassword");
     showError("new-password-error", "Terjadi kesalahan internal");
     return;
   }
@@ -189,7 +182,7 @@ async function handleResetPassword(event, button) {
     const response = await apiCall("/api/forgot-password/reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, newPassword }),
+      body: JSON.stringify({ email, newPassword, resetToken: passwordResetToken }),
     });
 
     if (!response.message) {
@@ -197,27 +190,13 @@ async function handleResetPassword(event, button) {
     }
 
     showSuccess("Kata sandi berhasil diatur ulang. Mengarahkan ke halaman masuk...");
+    passwordResetToken = "";
     setTimeout(() => window.loadView("login"), 2000);
   } catch (error) {
     showError("new-password-error", error.message || "Gagal mengatur ulang kata sandi");
   } finally {
     showLoading(false, button);
   }
-}
-
-function validatePassword(password) {
-  const minLength = 8;
-  const hasLetter = /[a-zA-Z]/.test(password);
-  const hasNumber = /\d/.test(password);
-  const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-  if (password.length < minLength || !(hasLetter && hasNumber && hasSymbol)) {
-    return {
-      isValid: false,
-      message: "Kata sandi minimal 8 karakter dan harus berisi kombinasi huruf, angka, dan simbol.",
-    };
-  }
-  return { isValid: true, message: "" };
 }
 
 function toggleStage(stageId) {

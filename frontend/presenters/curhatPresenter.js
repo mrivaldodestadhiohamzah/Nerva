@@ -1,5 +1,6 @@
 import { apiCall } from '../config.js';
 import { hideGlobalLoading, setButtonLoading, showGlobalLoading } from '../utils/loading.js';
+import { validateCurhatText } from '../utils/validation.js';
 
 export function renderCurhat() {
   return fetch("/views/curhat.html")
@@ -31,7 +32,6 @@ export function renderCurhat() {
       const result = document.getElementById("result");
 
       if (!submitButton || !curhatForm || !curhatInput) {
-        console.warn("Required form elements not found in curhat.html.");
         return;
       }
 
@@ -39,18 +39,11 @@ export function renderCurhat() {
         event.preventDefault();
         if (submitButton.disabled) return;
         const text = curhatInput.value.trim();
-
-        if (!text) {
-          alert("Silakan tulis curhat Anda terlebih dahulu.");
+        const textValidation = validateCurhatText(text);
+        if (!textValidation.isValid) {
+          alert(textValidation.message);
           return;
         }
-
-        if (text.length < 50) {
-          alert("Silakan tulis minimal 50 karakter agar hasil analisis lebih akurat.");
-          return;
-        }
-
-        console.log("Submitting curhat text:", { length: text.length });
 
         showLoading();
 
@@ -64,8 +57,6 @@ export function renderCurhat() {
               text: text
             }),
           });
-
-          console.log("Curhat analysis response received");
 
           if (!result || typeof result !== 'object') {
             throw new Error('Format respons tidak valid');
@@ -84,22 +75,17 @@ export function renderCurhat() {
             pending_dass21: result.pending_dass21 || true
           };
 
-          console.log("Curhat analysis prepared for DASS-21");
-
           sessionStorage.setItem("curhatResult", JSON.stringify(enhancedResult));
           
           curhatInput.value = "";
 
           if (window.loadView) {
-            console.log("Navigating to DASS-21 view");
             window.loadView("dass21");
           } else {
             console.error("window.loadView function not found");
           }
 
         } catch (error) {
-          console.error("Error occurred:", error);
-          
           let errorMessage = "Gagal memproses curhat Anda. ";
           
           if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {

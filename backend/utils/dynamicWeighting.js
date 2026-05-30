@@ -495,14 +495,6 @@ export function calculateDynamicFusion({
     P_final,
   };
 
-  console.log("Behavior-aware reliability fusion calculated:", {
-    ...apiReady,
-    suspiciousPatterns: dassReliability.suspiciousPatterns,
-    contradiction: dassReliability.contradiction,
-    spamLikeCurhat: textQuality.spamLike,
-    durationSeconds: dassReliability.durationSeconds,
-  });
-
   return {
     ...apiReady,
     method: "behavior_aware_reliability_fusion_v2",

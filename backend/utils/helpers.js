@@ -30,24 +30,37 @@ export function generateId() {
   return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
+export function normalizeEmail(email = "") {
+  return String(email).trim().toLowerCase();
+}
+
 export function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[cC][oO][mM]$/;
-  return emailRegex.test(email);
+  const cleanEmail = normalizeEmail(email);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  return emailRegex.test(cleanEmail);
 }
 
 export function validatePassword(password) {
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+  const value = String(password || "");
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/;
   return {
-    isValid: password.length >= 6 && passwordRegex.test(password),
-    message: "Kata sandi minimal 6 karakter dan harus berisi huruf besar, huruf kecil, serta angka"
+    isValid: value.length >= 8 && value.length <= 128 && passwordRegex.test(value),
+    message: "Kata sandi minimal 8 karakter dan harus berisi huruf besar, huruf kecil, angka, serta simbol"
   };
 }
 
 export function validateName(name) {
-  const trimmedName = name.trim();
+  const trimmedName = String(name || "").trim();
   return {
     isValid: trimmedName.length >= 2 && trimmedName.length <= 50,
     message: "Nama harus terdiri dari 2 sampai 50 karakter",
     value: trimmedName
+  };
+}
+
+export function validateConfirmPassword(password, confirmPassword) {
+  return {
+    isValid: password === confirmPassword,
+    message: "Konfirmasi kata sandi tidak cocok",
   };
 }

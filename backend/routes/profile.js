@@ -4,6 +4,8 @@ import multer from "multer";
 import { supabase } from "../supabaseClient.js";
 import { authenticateToken } from "../middleware/auth.js";
 import { sendSafeError, validateRequiredText } from "../utils/security.js";
+import { validatePassword } from "../utils/helpers.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 const PROFILE_IMAGE_BUCKET = "profile-img";
@@ -18,7 +20,6 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: (req, file, cb) => {
-    console.log("File filter check:", file.mimetype);
     if (ALLOWED_PROFILE_IMAGE_TYPES.has(file.mimetype)) {
       cb(null, true);
     } else {
@@ -43,7 +44,6 @@ function handleProfileImageUpload(req, res, next) {
 
 // GET /api/profile - Fetch user profile
 router.get("/", authenticateToken, async (req, res) => {
-  console.log("GET /api/profile called with user:", req.user.user_id);
   try {
     const imgColumnAvailable = await canUseUserImageColumn();
     const { data: user, error } = await supabase
@@ -53,7 +53,9 @@ router.get("/", authenticateToken, async (req, res) => {
       .single();
 
     if (error || !user) {
-      console.error("User fetch error:", error?.message || "Pengguna tidak ditemukan");
+      logger.warn("Profile fallback used because user row was unavailable", {
+        reason: error?.message || "not_found",
+      });
       return res.json({
         user: {
           user_id: req.user.user_id,
@@ -75,9 +77,8 @@ router.get("/", authenticateToken, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching profile:", {
+    logger.error("Error fetching profile", {
       message: error.message,
-      stack: error.stack
     });
     sendSafeError(res, 500, "Gagal mengambil profil");
   }
@@ -85,7 +86,6 @@ router.get("/", authenticateToken, async (req, res) => {
 
 // PUT /api/profile - Update user profile
 router.put("/", authenticateToken, handleProfileImageUpload, async (req, res) => {
-  console.log("PUT /api/profile called for user:", req.user.user_id);
   try {
     const { data: user, error: userError } = await supabase
       .from("users")
@@ -94,7 +94,9 @@ router.put("/", authenticateToken, handleProfileImageUpload, async (req, res) =>
       .single();
 
     if (userError || !user) {
-      console.error("User fetch error:", userError?.message || "Pengguna tidak ditemukan");
+      logger.warn("Profile update user lookup failed", {
+        reason: userError?.message || "not_found",
+      });
       return sendSafeError(res, 404, "Pengguna tidak ditemukan");
     }
 
@@ -142,9 +144,8 @@ router.put("/", authenticateToken, handleProfileImageUpload, async (req, res) =>
           updates.img = savedProfileImage.path;
         }
 
-        console.log(`Image uploaded: ${req.file.mimetype}, size: ${req.file.size} bytes`);
       } catch (error) {
-        console.error("Image processing error:", error.message);
+        logger.error("Image processing error", { message: error.message });
         return sendSafeError(res, 500, error.message || "Gagal memproses gambar");
       }
     }
@@ -170,7 +171,7 @@ router.put("/", authenticateToken, handleProfileImageUpload, async (req, res) =>
       .single();
 
     if (updateError) {
-      console.error("Update error:", updateError.message);
+      logger.error("Profile update failed", { message: updateError.message });
       return sendSafeError(res, 500, "Gagal memperbarui profil");
     }
 
@@ -186,9 +187,8 @@ router.put("/", authenticateToken, handleProfileImageUpload, async (req, res) =>
       },
     });
   } catch (error) {
-    console.error("Update profile error:", {
+    logger.error("Update profile error", {
       message: error.message,
-      stack: error.stack
     });
     sendSafeError(res, 500, "Gagal memperbarui profil");
   }
@@ -196,7 +196,6 @@ router.put("/", authenticateToken, handleProfileImageUpload, async (req, res) =>
 
 // DELETE /api/profile - Delete user account
 router.delete("/", authenticateToken, async (req, res) => {
-  console.log("=== DELETE /api/profile called for user:", req.user.user_id);
   try {
     // Verify user exists
     const { data: user, error: userError } = await supabase
@@ -206,16 +205,12 @@ router.delete("/", authenticateToken, async (req, res) => {
       .single();
 
     if (userError || !user) {
-      console.error("User fetch error:", {
+      logger.warn("Delete profile user lookup failed", {
         message: userError?.message || "Pengguna tidak ditemukan",
-        details: userError?.details,
         code: userError?.code,
-        hint: userError?.hint
       });
       return sendSafeError(res, 404, "Pengguna tidak ditemukan");
     }
-
-    console.log("User found:", user.user_id);
 
     // Delete history records
     const { data: historyData, error: historyError } = await supabase
@@ -225,16 +220,12 @@ router.delete("/", authenticateToken, async (req, res) => {
       .select("history_id"); // Return deleted record IDs for logging
 
     if (historyError) {
-      console.error("History delete error:", {
+      logger.error("History delete error", {
         message: historyError.message,
-        details: historyError.details,
         code: historyError.code,
-        hint: historyError.hint
       });
       return sendSafeError(res, 500, "Gagal menghapus data riwayat");
     }
-
-    console.log("History records deleted:", historyData?.length || 0);
 
     // Delete user
     const { data: userData, error: userDeleteError } = await supabase
@@ -245,29 +236,22 @@ router.delete("/", authenticateToken, async (req, res) => {
       .single();
 
     if (userDeleteError) {
-      console.error("User delete error:", {
+      logger.error("User delete error", {
         message: userDeleteError.message,
-        details: userDeleteError.details,
         code: userDeleteError.code,
-        hint: userDeleteError.hint
       });
       return sendSafeError(res, 500, "Gagal menghapus akun pengguna");
     }
 
     if (!userData) {
-      console.warn("Pengguna tidak ditemukan with user_id:", req.user.user_id);
       return sendSafeError(res, 404, "Akun pengguna tidak ditemukan");
     }
 
-    console.log("Akun berhasil dihapus for user:", req.user.user_id);
     return res.status(200).json({ message: "Akun berhasil dihapus" });
   } catch (error) {
-    console.error("Delete account error:", {
+    logger.error("Delete account error", {
       message: error.message,
-      details: error.details,
       code: error.code,
-      hint: error.hint,
-      stack: error.stack
     });
     return sendSafeError(res, 500, "Gagal menghapus akun");
   }
@@ -298,7 +282,7 @@ async function ensureProfileImageBucket() {
   });
 
   if (createError && !/already exists/i.test(createError.message || "")) {
-    console.error("Profile image bucket error:", createError.message);
+    logger.error("Profile image bucket error", { message: createError.message });
     throw new Error("Gagal menyiapkan penyimpanan gambar profil");
   }
 }
@@ -320,7 +304,7 @@ async function saveProfileImage(userId, file) {
     });
 
   if (uploadError) {
-    console.error("Image upload error:", uploadError.message);
+    logger.error("Image upload error", { message: uploadError.message });
     throw new Error("Gagal mengunggah gambar profil");
   }
 
@@ -372,7 +356,7 @@ async function getStoredProfileImageUrl(userId) {
     const avatarFile = files.find((file) => file.name.startsWith("avatar.")) || files[0];
     return getProfileImageUrl(`${folder}/${avatarFile.name}`);
   } catch (error) {
-    console.warn("Failed to load stored profile image:", error.message);
+    logger.warn("Failed to load stored profile image", { message: error.message });
     return null;
   }
 }
@@ -404,21 +388,6 @@ function getImageExtension(mimetype) {
   if (extension === "webp") return "webp";
   if (extension === "gif") return "gif";
   return "jpg";
-}
-
-function validatePassword(password) {
-  const minLength = 8;
-  const hasLetter = /[a-zA-Z]/.test(password);
-  const hasNumber = /\d/.test(password);
-  const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-  if (password.length < minLength || !(hasLetter && hasNumber && hasSymbol)) {
-    return {
-      isValid: false,
-      message: "Kata sandi minimal 8 karakter dan harus berisi kombinasi huruf, angka, dan simbol.",
-    };
-  }
-  return { isValid: true, message: "" };
 }
 
 export default router;

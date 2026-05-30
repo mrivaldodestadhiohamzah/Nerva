@@ -136,7 +136,9 @@
 
     // Function to load user data for navbar
     async function loadUserDataForNavbar() {
-      const token = sessionStorage.getItem('token');
+      const token = typeof window.getAuthToken === 'function'
+        ? window.getAuthToken()
+        : sessionStorage.getItem('token');
       if (!token) return;
 
       try {
@@ -159,6 +161,10 @@
 
     // Logout function
     function logout() {
+      if (typeof window.logout === 'function') {
+        window.logout();
+        return;
+      }
       sessionStorage.removeItem("isLoggedIn");
       sessionStorage.removeItem("user");
       sessionStorage.removeItem("token");

@@ -3,14 +3,13 @@ import { supabase } from "../supabaseClient.js";
 import { authenticateToken } from "../middleware/auth.js";
 import { sendSafeError } from "../utils/security.js";
 import { decryptHistoryEntry } from "../utils/encryption.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 
 router.get("/history/:historyId", authenticateToken, async (req, res) => {
   try {
     const { historyId } = req.params;
-
-    console.log(`Fetching history item: historyId=${historyId}, userId=${req.user.user_id}`);
 
     const { data: historyItem, error } = await supabase
       .from("history")
@@ -29,7 +28,7 @@ router.get("/history/:historyId", authenticateToken, async (req, res) => {
       .single();
 
     if (error) {
-      console.error("Supabase error:", error);
+      logger.warn("History detail fetch failed", { message: error.message, code: error.code });
       if (error.code === "PGRST116") {
         return sendSafeError(res, 404, "Item riwayat tidak ditemukan");
       }
@@ -38,7 +37,7 @@ router.get("/history/:historyId", authenticateToken, async (req, res) => {
 
     res.json(decryptHistoryEntry(historyItem));
   } catch (error) {
-    console.error("Error fetching history item:", error.message, error.stack);
+    logger.error("Error fetching history item", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal mengambil item riwayat");
   }
 });

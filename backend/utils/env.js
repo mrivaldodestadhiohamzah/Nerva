@@ -7,11 +7,16 @@ const __dirname = path.dirname(__filename);
 const backendRoot = path.resolve(__dirname, "..");
 const projectRoot = path.resolve(backendRoot, "..");
 
-dotenv.config({ path: path.join(projectRoot, ".env") });
-dotenv.config({ path: path.join(backendRoot, ".env") });
-dotenv.config({ path: path.join(projectRoot, ".env.local"), override: true });
-dotenv.config({ path: path.join(backendRoot, ".env.local"), override: true });
-dotenv.config();
+const shouldLoadEnvFiles =
+  process.env.NODE_ENV !== "test" || process.env.LOAD_ENV_IN_TEST === "true";
+
+if (shouldLoadEnvFiles) {
+  dotenv.config({ path: path.join(projectRoot, ".env") });
+  dotenv.config({ path: path.join(backendRoot, ".env") });
+  dotenv.config({ path: path.join(projectRoot, ".env.local"), override: true });
+  dotenv.config({ path: path.join(backendRoot, ".env.local"), override: true });
+  dotenv.config();
+}
 
 export const projectRootDir = projectRoot;
 export const backendRootDir = backendRoot;

@@ -1,19 +1,13 @@
-import { API_BASE_URL, apiCall } from "../config.js";
+import { API_BASE_URL, apiCall, clearAuthSession, getAuthToken } from "../config.js";
+import { validateConfirmPassword, validatePassword } from "../utils/validation.js";
 
 let currentUser = null;
 const ALLOWED_PROFILE_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 export function renderAccount() {
-    console.log("renderAccount called");
-    console.log("isLoggedIn:", sessionStorage.getItem("isLoggedIn"));
-    console.log("user:", sessionStorage.getItem("user"));
-    console.log("token:", sessionStorage.getItem("token"));
-
     const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
-    console.log("isLoggedIn check result:", isLoggedIn);
 
     if (!isLoggedIn) {
-        console.log("Not logged in, redirecting to login");
         window.loadView("login");
         return;
     }
@@ -24,7 +18,6 @@ export function renderAccount() {
             return res.text();
         })
         .then((html) => {
-            console.log("Account HTML loaded successfully");
             document.getElementById("app").innerHTML = html;
 
             const cachedUser = JSON.parse(sessionStorage.getItem("user") || "{}");
@@ -77,21 +70,6 @@ async function fetchUserProfile() {
     }
 }
 
-function validatePassword(password) {
-    const minLength = 8;
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    if (password.length < minLength || !(hasLetter && hasNumber && hasSymbol)) {
-        return {
-            isValid: false,
-            message: "Kata sandi minimal 8 karakter dan harus berisi kombinasi huruf, angka, dan simbol.",
-        };
-    }
-    return { isValid: true, message: "" };
-}
-
 function handleProfileImageDisplay(imageElement) {
     const defaultImage = 'https://via.placeholder.com/150x150/e2e8f0/64748b?text=User';
     
@@ -115,9 +93,7 @@ function handleProfileImageDisplay(imageElement) {
                         imageElement.src = url;
                         return;
                     }
-                } catch (hexError) {
-                    console.error('Error decoding hex string:', hexError);
-                }
+                } catch {}
             }
         }
 
@@ -132,13 +108,11 @@ function handleProfileImageDisplay(imageElement) {
         imageElement.src = defaultImage;
         
         imageElement.onerror = () => {
-            console.warn('Failed to load profile image, using default');
             imageElement.src = defaultImage;
             imageElement.onerror = null;
         };
         
-    } catch (error) {
-        console.error('Error displaying profile image:', error);
+    } catch {
         imageElement.src = defaultImage;
     }
 }
@@ -196,8 +170,9 @@ async function handleSettingsSubmit(e) {
             showFieldError("new-password", passwordValidation.message);
             return;
         }
-        if (newPassword !== confirmPassword) {
-            showFieldError("confirm-password", "Kata sandi tidak cocok");
+        const confirmValidation = validateConfirmPassword(newPassword, confirmPassword);
+        if (!confirmValidation.isValid) {
+            showFieldError("confirm-password", confirmValidation.message);
             return;
         }
     }
@@ -205,7 +180,7 @@ async function handleSettingsSubmit(e) {
     showLoading();
 
     try {
-        const token = sessionStorage.getItem("token");
+        const token = getAuthToken();
         const formData = new FormData();
         formData.append("name", username);
 
@@ -542,10 +517,7 @@ async function handleDeleteAccount() {
             throw new Error("Respons server tidak valid");
         }
 
-        console.log("Account deleted successfully:", response.message);
-        sessionStorage.removeItem("isLoggedIn");
-        sessionStorage.removeItem("user");
-        sessionStorage.removeItem("token");
+        clearAuthSession();
         showSuccess("Akun berhasil dihapus");
         setTimeout(() => {
             window.loadView("login");
@@ -556,15 +528,8 @@ async function handleDeleteAccount() {
             try {
                 const details = JSON.parse(error.message.split("HTTP 500 - ")[1]).details;
                 errorMessage = details || errorMessage;
-            } catch (e) {
-                console.warn("Failed to parse error details:", e);
-            }
+            } catch {}
         }
-        console.error("Error deleting account:", {
-            message: error.message,
-            stack: error.stack,
-            response: error.message.includes("HTTP 500") ? error.message : null
-        });
         showError(errorMessage);
     } finally {
         closeDeleteModal();

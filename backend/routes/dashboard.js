@@ -3,6 +3,7 @@ import { supabase } from "../supabaseClient.js";
 import { authenticateToken } from "../middleware/auth.js";
 import { sendSafeError } from "../utils/security.js";
 import { decryptHistoryEntries, decryptHistoryEntry } from "../utils/encryption.js";
+import { logger } from "../utils/logger.js";
 
 const router = express.Router();
 const DEFAULT_DASHBOARD_TIME_ZONE = "Asia/Jakarta";
@@ -120,7 +121,7 @@ async function fetchDashboardHistory({ userId, since }) {
 
     if (!error) {
       if (lastError) {
-        console.warn("Dashboard history query used fallback columns:", selectFields);
+        logger.warn("Dashboard history query used fallback columns", { selectFields });
       }
       return data || [];
     }
@@ -130,7 +131,7 @@ async function fetchDashboardHistory({ userId, since }) {
       throw error;
     }
 
-    console.warn("Dashboard history optional column missing, retrying with fallback:", error.message);
+    logger.warn("Dashboard history optional column missing, retrying with fallback", { message: error.message });
   }
 
   throw lastError;
@@ -231,7 +232,7 @@ router.get("/summary", authenticateToken, async (req, res) => {
       tips: uniqueTips.length > 0 ? uniqueTips : defaultTips
     });
   } catch (error) {
-    console.error("Error fetching dashboard summary:", error);
+    logger.error("Error fetching dashboard summary", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal mengambil ringkasan dasbor");
   }
 });
@@ -252,7 +253,7 @@ router.get("/recent", authenticateToken, async (req, res) => {
 
     res.json(decryptHistoryEntries(history));
   } catch (error) {
-    console.error("Error fetching recent history:", error);
+    logger.error("Error fetching recent history", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal mengambil riwayat terbaru");
   }
 });
@@ -268,7 +269,7 @@ router.get("/detail/:id", authenticateToken, async (req, res) => {
       .maybeSingle();
 
     if (error) {
-      console.error("Supabase error:", error);
+      logger.warn("Dashboard entry details fetch failed", { message: error.message, code: error.code });
       return sendSafeError(res, 500, "Terjadi kesalahan database");
     }
 
@@ -278,7 +279,7 @@ router.get("/detail/:id", authenticateToken, async (req, res) => {
 
     res.json(decryptHistoryEntry(entry));
   } catch (error) {
-    console.error("Error fetching entry details:", error);
+    logger.error("Error fetching entry details", { message: error.message, code: error.code });
     sendSafeError(res, 500, "Gagal mengambil detail data");
   }
 });

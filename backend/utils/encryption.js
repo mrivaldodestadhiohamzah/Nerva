@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import "./env.js";
+import { logger } from "./logger.js";
 
 const ALGORITHM = "aes-256-gcm";
 const PREFIX = "enc:v1:";
@@ -121,7 +122,7 @@ function safeDecryptField(value) {
   try {
     return decryptText(value);
   } catch (error) {
-    console.error("Failed to decrypt protected field:", error.message);
+    logger.warn("Failed to decrypt protected field", { message: error.message });
     return "[Data tidak dapat didekripsi]";
   }
 }
@@ -180,7 +181,7 @@ function parseProtectedMetadata(value) {
   try {
     return parseHistoryMetadata(decryptText(value));
   } catch (error) {
-    console.error("Failed to decrypt protected metadata:", error.message);
+    logger.warn("Failed to decrypt protected metadata", { message: error.message });
     return null;
   }
 }
