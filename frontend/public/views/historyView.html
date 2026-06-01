@@ -22,11 +22,14 @@
 </style>
 
 <body class="bg-gray-50 min-h-screen">
-    <main class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 xl:py-20">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-600 mb-4 sm:mb-0 ">Riwayat</h1>
+    <main class="max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8 xl:py-16">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 rounded-2xl border border-violet-100 bg-white p-5 shadow-sm">
+            <div>
+                <p class="text-sm font-semibold text-violet-700 mb-1">Catatan hasil</p>
+                <h1 class="text-3xl font-bold text-gray-800">Riwayat</h1>
+            </div>
             <div class="w-full sm:w-auto">
-                <select id="filterDropdown" class="w-full sm:w-48 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white">
+                <select id="filterDropdown" class="w-full sm:w-56 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white">
                     <option value="all">Semua Waktu</option>
                     <option value="today">Hari Ini</option>
                     <option value="thisWeek">Minggu Ini</option>
@@ -38,9 +41,9 @@
             </div>
         </div>
 
-        <div id="loadingState" class="flex justify-center items-center py-12">
+        <div id="loadingState" class="flex flex-col sm:flex-row justify-center items-center gap-3 py-12">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-            <span class="ml-3 text-gray-600">Memuat riwayat...</span>
+            <span class="text-gray-600">Memuat riwayat...</span>
         </div>
 
         <div id="historyContent" class="hidden">

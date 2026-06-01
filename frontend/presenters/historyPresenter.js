@@ -428,7 +428,7 @@ class HistoryView {
 
     data.forEach(item => {
       const card = document.createElement('div');
-      card.className = 'bg-white shadow-md rounded-xl p-4 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-100';
+      card.className = 'bg-white shadow-md rounded-2xl p-5 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-100';
       card.dataset.historyId = item.history_id;
 
       const stressPercentage = this.toPercent(item.stress_percent);
@@ -451,17 +451,17 @@ class HistoryView {
                 </span>
               </div>
               <p class="text-sm text-gray-500 mb-2">${this.formatDate(date)}</p>
-              <p class="text-gray-700 text-sm line-clamp-2 break-words">${escapeHtml(text)}</p>
+              <p class="text-gray-700 text-base sm:text-sm leading-relaxed line-clamp-2 break-words">${escapeHtml(text)}</p>
               ${fusionSummary}
             </div>
           </div>
           <div class="flex flex-shrink-0 items-center gap-2 self-end sm:self-center sm:ml-4">
-            <button type="button" class="delete-history-button inline-flex h-10 w-10 items-center justify-center rounded-full text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 transition" data-history-id="${historyId}" aria-label="Hapus riwayat" title="Hapus riwayat">
+            <button type="button" class="delete-history-button inline-flex h-11 w-11 items-center justify-center rounded-full text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 transition" data-history-id="${historyId}" aria-label="Hapus riwayat" title="Hapus riwayat">
               <svg class="h-5 w-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3 0V5a2 2 0 012-2h0a2 2 0 012 2v2"></path>
               </svg>
             </button>
-            <button type="button" class="detail-button inline-flex h-10 w-10 items-center justify-center rounded-full text-violet-700 hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300 transition" data-history-id="${historyId}" aria-label="Lihat detail riwayat" title="Lihat detail">
+            <button type="button" class="detail-button inline-flex h-11 w-11 items-center justify-center rounded-full text-violet-700 hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300 transition" data-history-id="${historyId}" aria-label="Lihat detail riwayat" title="Lihat detail">
               <svg class="h-6 w-6 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
               </svg>

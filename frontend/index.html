@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
   <link rel="icon" type="image/png" href="/assets/character.svg" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
         integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
@@ -40,15 +41,15 @@
   <header id="navbar-container"></header>
 
   <main id="app"></main>
-<footer class="contact border-t border-gray-200 text-gray-600 px-8 py-6 text-[20px]" id="contact" data-aos="fade-up">
-    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-10 ml-6 md:ml-0 mr-6">
+<footer class="contact border-t border-violet-100 text-gray-600 px-5 sm:px-8 py-8 sm:py-10 text-base" id="contact" data-aos="fade-up">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-8 sm:gap-10 max-w-7xl mx-auto">
       <div class="w-full md:w-64">
         <h2 class="text-2xl font-semibold text-violet-800">NERVA</h2>
         <p class="mt-2 text-base leading-relaxed text-gray-600">Ruang refleksi emosi yang aman dan mudah dipahami.</p>
       </div>
       <div class="flex flex-wrap gap-x-7 gap-y-6 flex-grow justify-between">
         <div class="w-full sm:w-auto flex-0 min-w-[150px]">
-          <h3 class="text -xl font-semibold text-gray-800 mb-4">Informasi</h3>
+          <h3 class="text-xl font-semibold text-gray-800 mb-4">Informasi</h3>
           <div class="space-y-2 text-base">
             <a href="/views/terms.html" target="_blank" rel="noopener noreferrer" class="block hover:text-violet-600">Syarat Layanan</a>
             <a href="/views/privacy.html" target="_blank" rel="noopener noreferrer" class="block hover:text-violet-600">Kebijakan Privasi</a>
@@ -106,7 +107,6 @@
       document.querySelectorAll('a[onclick*="loadView"]').forEach(link => {
         link.addEventListener('click', (e) => {
           const view = e.target.getAttribute('onclick').match(/'([^']+)'/)?.[1];
-          console.log(`loadView called for view: ${view}`);
         });
       });
     }

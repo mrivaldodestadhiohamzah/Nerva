@@ -42,19 +42,21 @@ export function renderDass21() {
   }
 
   document.getElementById('app').innerHTML = `
-    <main class="bg-gray-50 min-h-screen w-full px-4 py-8 sm:px-6 lg:px-10">
-      <section class="max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg shadow-sm">
-        <div class="bg-violet-800 text-white px-5 py-4 rounded-t-lg">
-          <h1 class="text-xl font-semibold">Kuesioner DASS-21</h1>
+    <main class="bg-gray-50 min-h-screen w-full px-4 py-5 sm:px-6 sm:py-8 lg:px-10">
+      <section class="max-w-4xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="soft-section-header px-5 py-5">
+          <p class="text-sm font-semibold text-violet-700 mb-1">Langkah kedua</p>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Kuesioner DASS-21</h1>
+          <p class="mt-2 text-sm sm:text-base text-gray-600">Pilih jawaban yang paling sesuai dengan kondisi Anda selama beberapa waktu terakhir.</p>
         </div>
         <form id="dass21Form" class="p-5 sm:p-6 space-y-5">
           <div class="space-y-4">
             ${questions.map((question, index) => `
-              <fieldset class="border border-gray-200 rounded-lg p-4">
-                <legend class="text-sm font-medium text-gray-800 px-1">${index + 1}. ${question.text}</legend>
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-3">
+              <fieldset class="border border-gray-200 rounded-xl p-4 bg-white">
+                <legend class="text-base font-semibold text-gray-800 px-1">${index + 1}. ${question.text}</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5 mt-3">
                   ${answerLabels.map((label, value) => `
-                    <label class="flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm cursor-pointer hover:bg-violet-50">
+                    <label class="flex items-center gap-3 rounded-xl border border-gray-200 px-3.5 py-3 text-base cursor-pointer hover:bg-violet-50 active:bg-violet-100">
                       <input type="radio" name="q${index}" value="${value}" class="text-violet-700" required>
                       <span>${label}</span>
                     </label>
@@ -64,7 +66,7 @@ export function renderDass21() {
             `).join('')}
           </div>
           <div class="flex justify-end">
-            <button type="submit" class="w-full sm:w-auto bg-violet-800 text-white px-6 py-3 rounded-lg text-base font-medium hover:bg-gray-800 transition-colors">
+            <button type="submit" class="w-full sm:w-auto bg-violet-800 text-white px-7 py-3.5 rounded-xl text-base font-semibold hover:bg-violet-900 transition-colors">
               Lihat Hasil
             </button>
           </div>
