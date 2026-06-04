@@ -632,7 +632,17 @@ function setDashboardDeleteLoading(isLoading) {
   if (cancelButton) cancelButton.disabled = isLoading;
   confirmButton.classList.toggle('opacity-75', isLoading);
   confirmButton.classList.toggle('cursor-not-allowed', isLoading);
-  confirmButton.textContent = isLoading ? 'Menghapus...' : 'Hapus';
+  confirmButton.innerHTML = isLoading
+    ? `
+      <span class="inline-flex items-center justify-center gap-2">
+        <video class="h-6 w-6 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-hidden="true">
+          <source src="/assets/loading.webm" type="video/webm">
+        </video>
+        <span>Menghapus...</span>
+      </span>
+    `
+    : 'Hapus';
+  if (isLoading) confirmButton.querySelector('video')?.play?.().catch?.(() => {});
 }
 
 async function confirmDashboardDelete() {
@@ -710,13 +720,27 @@ function showLoadingState(message = 'Memuat data...') {
   if (messageEl) messageEl.textContent = message;
 
   const loadingElements = document.querySelectorAll('.loading-placeholder');
-  loadingElements.forEach(el => el.classList.remove('hidden'));
+  loadingElements.forEach(el => {
+    el.classList.remove('hidden');
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+    el.querySelectorAll('video').forEach(video => {
+      video.muted = true;
+      video.play?.().catch?.(() => {});
+    });
+  });
   setDashboardControlsDisabled(true);
 }
 
 function hideLoadingState() {
   const loadingElements = document.querySelectorAll('.loading-placeholder');
-  loadingElements.forEach(el => el.classList.add('hidden'));
+  loadingElements.forEach(el => {
+    el.classList.remove('is-visible');
+    setTimeout(() => {
+      if (!el.classList.contains('is-visible')) {
+        el.classList.add('hidden');
+      }
+    }, 400);
+  });
   setDashboardControlsDisabled(false);
 }
 

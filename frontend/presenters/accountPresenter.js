@@ -462,25 +462,50 @@ function showLoading() {
     const loadingSpinner = document.getElementById('loading-spinner');
     if (loadingSpinner) {
         loadingSpinner.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            loadingSpinner.classList.remove('is-hidden');
+            loadingSpinner.classList.add('is-visible');
+        });
+        loadingSpinner.querySelectorAll('video').forEach((video) => {
+            video.muted = true;
+            video.play?.().catch?.(() => {});
+        });
     }
 
     const submitButton = document.querySelector('#settings-form button[type="submit"]');
     if (submitButton) {
+        if (!submitButton.dataset.defaultText) {
+            submitButton.dataset.defaultText = submitButton.textContent.trim();
+        }
         submitButton.disabled = true;
-        submitButton.textContent = 'Menyimpan...';
+        submitButton.innerHTML = `
+            <span class="inline-flex items-center justify-center gap-2">
+                <video class="h-6 w-6 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-hidden="true">
+                    <source src="/assets/loading.webm" type="video/webm">
+                </video>
+                <span>Menyimpan...</span>
+            </span>
+        `;
+        submitButton.querySelector('video')?.play?.().catch?.(() => {});
     }
 }
 
 function hideLoading() {
     const loadingSpinner = document.getElementById('loading-spinner');
     if (loadingSpinner) {
-        loadingSpinner.classList.add('hidden');
+        loadingSpinner.classList.remove('is-visible');
+        loadingSpinner.classList.add('is-hidden');
+        setTimeout(() => {
+            if (loadingSpinner.classList.contains('is-hidden')) {
+                loadingSpinner.classList.add('hidden');
+            }
+        }, 440);
     }
 
     const submitButton = document.querySelector('#settings-form button[type="submit"]');
     if (submitButton) {
         submitButton.disabled = false;
-        submitButton.textContent = 'Simpan Perubahan';
+        submitButton.textContent = submitButton.dataset.defaultText || 'Simpan Perubahan';
     }
 }
 

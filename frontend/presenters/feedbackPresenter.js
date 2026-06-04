@@ -320,7 +320,7 @@ function displayFeedback(result) {
     const offset = circumference - (stressLevel / 100) * circumference;
 
     chartContainer.innerHTML = `
-      <svg width="120" height="120" viewBox="0 0 120 120" class="transform -rotate-90">
+      <svg class="h-full w-full transform -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
         <circle cx="60" cy="60" r="${radius}" fill="none" stroke="#e5e7eb" stroke-width="20" />
         <circle cx="60" cy="60" r="${radius}" fill="none" stroke="url(#gradient)" stroke-width="20" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" />
         <defs>
@@ -330,15 +330,14 @@ function displayFeedback(result) {
           </linearGradient>
         </defs>
       </svg>
-      <div class="absolute inset-0 flex items-center justify-center text-violet-800 font-bold text-xl">
-        <span id="percentage">${Math.round(stressLevel)}%</span>
+      <div class="absolute inset-0 flex items-center justify-center">
+        <span id="percentage" class="rounded-full bg-white/85 px-1 text-lg font-bold leading-none text-violet-800 sm:text-xl">${Math.round(stressLevel)}%</span>
       </div>
     `;
 
-    // Update styles for positioning
-    chartContainer.classList.add('relative');
-    chartContainer.style.width = '120px';
-    chartContainer.style.height = '120px';
+    chartContainer.classList.add('relative', 'flex', 'shrink-0', 'items-center', 'justify-center');
+    chartContainer.style.width = '';
+    chartContainer.style.height = '';
   }
 
   const stressTitleEl = document.getElementById("stress-title");
@@ -399,12 +398,12 @@ function buildFusionDetails(result) {
 
   return `
     <div class="rounded-lg border border-violet-100 bg-violet-50 p-4 text-sm text-gray-700">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div><span class="font-medium">DASS-21:</span> ${formatPercent(dass21?.stressPercent ?? fusion?.dassStressPercent)}</div>
-        <div><span class="font-medium">Curhat ML:</span> ${formatPercent(fusion?.mlStressPercent)}</div>
-        <div><span class="font-medium">Bobot DASS-21:</span> ${formatPercent(fusion?.dassWeight)}</div>
-        <div><span class="font-medium">Bobot Curhat:</span> ${formatPercent(fusion?.curhatWeight ?? fusion?.mlWeight)}</div>
-        <div><span class="font-medium">Hasil Akhir:</span> ${formatPercent(fusion?.fusedStressPercent ?? result.stress_level?.stress_level)}</div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="min-w-0 break-words"><span class="font-medium">DASS-21:</span> ${formatPercent(dass21?.stressPercent ?? fusion?.dassStressPercent)}</div>
+        <div class="min-w-0 break-words"><span class="font-medium">Curhat ML:</span> ${formatPercent(fusion?.mlStressPercent)}</div>
+        <div class="min-w-0 break-words"><span class="font-medium">Bobot DASS-21:</span> ${formatPercent(fusion?.dassWeight)}</div>
+        <div class="min-w-0 break-words"><span class="font-medium">Bobot Curhat:</span> ${formatPercent(fusion?.curhatWeight ?? fusion?.mlWeight)}</div>
+        <div class="min-w-0 break-words"><span class="font-medium">Hasil Akhir:</span> ${formatPercent(fusion?.fusedStressPercent ?? result.stress_level?.stress_level)}</div>
       </div>
     </div>
   `;

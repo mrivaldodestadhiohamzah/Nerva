@@ -181,9 +181,11 @@
         </div>
     </div>
 
-    <div id="loading-spinner" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
-            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-600"></div>
+    <div id="loading-spinner" class="mascot-loading-overlay is-hidden hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 flex flex-col items-center text-center">
+            <video class="mb-2 h-20 w-20 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-label="Menyimpan perubahan">
+                <source src="/assets/loading.webm" type="video/webm">
+            </video>
             <span class="text-gray-700">Menyimpan perubahan...</span>
         </div>
     </div>

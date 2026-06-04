@@ -1,13 +1,9 @@
 <style>
   .loading-shimmer {
-    background: linear-gradient(90deg, #f0f0f0 25%, transparent 37%, #f0f0f0 63%);
-    background-size: 400% 100%;
-    animation: shimmer 1.5s ease-in-out infinite;
-  }
-
-  @keyframes shimmer {
-    0% { background-position: 100% 50%; }
-    100% { background-position: -100% 50%; }
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
   }
 
   .dashboard-card {
@@ -25,9 +21,55 @@
     height: 18rem;
   }
 
+  .loading-placeholder {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .loading-placeholder.is-visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .dashboard-cta-mascot-wrap {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .dashboard-cta-mascot {
+    position: absolute;
+    top: calc(-4.15rem + 6px);
+    right: -0.25rem;
+    z-index: 2;
+    width: clamp(4.25rem, 7vw, 5.4rem);
+    height: clamp(4.25rem, 7vw, 5.4rem);
+    pointer-events: none;
+  }
+
+  .dashboard-cta-mascot video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .dashboard-cta-button {
+    position: relative;
+    z-index: 3;
+  }
+
   @media (min-width: 640px) {
     .dashboard-chart-container {
       height: 22rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .dashboard-cta-mascot {
+      top: calc(-3.05rem + 6px);
+      right: 0.1rem;
+      width: 3.6rem;
+      height: 3.6rem;
     }
   }
 </style>
@@ -65,7 +107,11 @@
         <div class="p-5 sm:p-6 flex-1 flex flex-col justify-center">
           <div class="text-center">
             <div class="text-5xl sm:text-6xl font-bold mb-4" id="stress-percentage">
-              <div class="loading-shimmer h-14 sm:h-16 w-24 rounded mx-auto"></div>
+              <div class="loading-shimmer mx-auto">
+                <video class="h-14 w-14 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-label="Memuat data stres">
+                  <source src="/assets/loading.webm" type="video/webm">
+                </video>
+              </div>
             </div>
             <div class="h-3 rounded-full mb-4 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500"></div>
             <div class="grid grid-cols-3 gap-2 text-xs text-gray-600">
@@ -95,13 +141,21 @@
             <div class="flex items-center justify-between gap-4 rounded-xl bg-violet-50 px-4 py-4">
               <span class="text-sm font-medium text-gray-600">Total Analisis</span>
               <span class="text-xl font-bold text-gray-800" id="total-predictions">
-                <span class="loading-shimmer block h-6 w-10 rounded"></span>
+                <span class="loading-shimmer">
+                  <video class="h-8 w-8 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-label="Memuat total analisis">
+                    <source src="/assets/loading.webm" type="video/webm">
+                  </video>
+                </span>
               </span>
             </div>
             <div class="flex items-center justify-between gap-4 rounded-xl bg-violet-50 px-4 py-4">
               <span class="text-sm font-medium text-gray-600">Tingkat Dominan</span>
               <span class="text-lg font-bold text-violet-700 text-right" id="week-predictions">
-                <span class="loading-shimmer block h-6 w-20 rounded"></span>
+                <span class="loading-shimmer">
+                  <video class="h-8 w-8 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-label="Memuat tingkat dominan">
+                    <source src="/assets/loading.webm" type="video/webm">
+                  </video>
+                </span>
               </span>
             </div>
           </div>
@@ -116,9 +170,16 @@
           <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
             Gunakan Cek Mood secara berkala agar riwayat dan visualisasi stres Anda semakin mudah dipantau.
           </p>
-          <button type="button" onclick="loadView('curhat')" class="inline-flex items-center justify-center w-full rounded-lg bg-violet-800 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500">
-            Mulai Cek Mood
-          </button>
+          <div class="dashboard-cta-mascot-wrap">
+            <div class="dashboard-cta-mascot" aria-hidden="true">
+              <video autoplay muted loop playsinline webkit-playsinline preload="auto">
+                <source src="/assets/click.webm" type="video/webm">
+              </video>
+            </div>
+            <button type="button" onclick="loadView('curhat')" class="dashboard-cta-button inline-flex items-center justify-center w-full rounded-lg bg-violet-800 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500">
+              Mulai Cek Mood
+            </button>
+          </div>
         </div>
       </article>
     </section>
@@ -151,9 +212,12 @@
         </div>
         <div class="p-5 sm:p-6">
           <div class="space-y-3 max-h-[24rem] overflow-y-auto pr-1" id="recent-activity">
-            <div class="loading-shimmer h-16 w-full rounded"></div>
-            <div class="loading-shimmer h-16 w-full rounded"></div>
-            <div class="loading-shimmer h-16 w-full rounded"></div>
+            <div class="loading-shimmer min-h-24 w-full flex-col text-center text-sm text-gray-600">
+              <video class="h-16 w-16 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-label="Memuat aktivitas terbaru">
+                <source src="/assets/loading.webm" type="video/webm">
+              </video>
+              <span>Memuat aktivitas...</span>
+            </div>
           </div>
         </div>
       </article>
@@ -211,8 +275,12 @@
           <tbody class="bg-white divide-y divide-gray-200" id="predictions-table">
             <tr>
               <td colspan="5" class="px-6 py-8 text-center">
-                <div class="loading-shimmer h-4 w-40 rounded mx-auto mb-2"></div>
-                <div class="loading-shimmer h-4 w-32 rounded mx-auto"></div>
+                <div class="loading-shimmer flex-col text-sm text-gray-600">
+                  <video class="h-16 w-16 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-label="Memuat analisis terbaru">
+                    <source src="/assets/loading.webm" type="video/webm">
+                  </video>
+                  <span>Memuat analisis...</span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -223,7 +291,9 @@
 
   <div class="loading-placeholder hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div class="w-full max-w-sm bg-white rounded-xl p-6 text-center shadow-xl">
-      <div class="mx-auto mb-4 animate-spin rounded-full h-10 w-10 border-4 border-violet-100 border-t-violet-700"></div>
+      <video class="mx-auto mb-3 h-28 w-28 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-label="Memuat dasbor">
+        <source src="/assets/loading.webm" type="video/webm">
+      </video>
       <p id="dashboard-loading-message" class="text-base font-semibold text-gray-800">Memuat dasbor...</p>
       <p class="mt-2 text-sm leading-relaxed text-gray-600">Sebentar ya, data Anda sedang disiapkan.</p>
     </div>

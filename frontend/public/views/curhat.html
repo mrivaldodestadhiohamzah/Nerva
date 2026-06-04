@@ -3,7 +3,18 @@
     <div class="curhat-container max-w-3xl mx-auto my-6 sm:my-12 lg:my-16 p-5 sm:p-6 md:p-8 bg-white text-center">
 
       <div id="spinner" class="hidden fixed inset-0 bg-white bg-opacity-75 flex justify-center items-center z-50">
-        <img src="/assets/loading.gif" alt="Memuat..." class="w-16 h-16">
+        <video
+          class="w-20 h-20 object-contain"
+          autoplay
+          muted
+          loop
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          aria-label="Memuat"
+        >
+          <source src="/assets/loading.webm" type="video/webm">
+        </video>
       </div>
 
       <h2 class="text-3xl sm:text-4xl mb-4 font-bold">

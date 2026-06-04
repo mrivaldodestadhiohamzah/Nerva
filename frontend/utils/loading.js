@@ -8,7 +8,50 @@ function escapeHtml(value = '') {
 }
 
 const GLOBAL_LOADING_ID = 'global-loading-overlay';
-const BRAND_LOGO_URL = new URL('../assets/NervaLogo.png', import.meta.url).href;
+const LOADING_MASCOT_URL = '/assets/loading.webm';
+const LOADING_EXIT_MS = 440;
+
+function playLoadingVideos(container) {
+  container.querySelectorAll('video').forEach((video) => {
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.play?.().catch?.(() => {});
+  });
+}
+
+export function renderMascotLoading({
+  title = 'Memuat...',
+  message = '',
+  size = 'md',
+  textColor = 'text-gray-700',
+} = {}) {
+  const sizeClass = {
+    xs: 'h-6 w-6',
+    sm: 'h-10 w-10',
+    md: 'h-24 w-24 sm:h-28 sm:w-28',
+    lg: 'h-32 w-32 sm:h-40 sm:w-40',
+  }[size] || size;
+
+  return `
+    <div class="mascot-loading inline-flex flex-col items-center justify-center text-center" role="status" aria-live="polite">
+      <video
+        class="${sizeClass} object-contain"
+        autoplay
+        muted
+        loop
+        playsinline
+        webkit-playsinline
+        preload="auto"
+        aria-label="${escapeHtml(title)}"
+      >
+        <source src="${LOADING_MASCOT_URL}" type="video/webm">
+      </video>
+      ${title ? `<p class="mt-2 text-base font-semibold ${textColor}">${escapeHtml(title)}</p>` : ''}
+      ${message ? `<p class="mt-1 text-sm leading-relaxed text-gray-600">${escapeHtml(message)}</p>` : ''}
+    </div>
+  `;
+}
 
 export function showGlobalLoading({
   title = 'Memuat...',
@@ -19,34 +62,45 @@ export function showGlobalLoading({
   if (!overlay) {
     overlay = document.createElement('div');
     overlay.id = GLOBAL_LOADING_ID;
-    overlay.className = 'fixed inset-0 hidden flex items-center justify-center bg-white bg-opacity-80 px-4 backdrop-blur-sm';
+    overlay.className = 'mascot-loading-overlay is-hidden fixed inset-0 hidden flex items-center justify-center bg-white bg-opacity-80 px-4';
     overlay.style.zIndex = '9999';
     overlay.setAttribute('role', 'status');
     overlay.setAttribute('aria-live', 'polite');
     document.body.appendChild(overlay);
   }
 
-  overlay.innerHTML = `
-    <div class="w-full max-w-sm rounded-2xl border border-violet-100 bg-white p-6 text-center shadow-xl">
-      <img src="${BRAND_LOGO_URL}" alt="NERVA" class="mx-auto mb-3 h-14 w-auto object-contain" />
-      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-50">
-        <div class="h-8 w-8 animate-spin rounded-full border-4 border-violet-100 border-t-violet-700"></div>
-      </div>
-      <p class="text-base font-semibold text-gray-800">${escapeHtml(title)}</p>
-      <p class="mt-2 text-sm leading-relaxed text-gray-600">${escapeHtml(message)}</p>
-      <div class="mt-4 flex items-center justify-center gap-1.5" aria-hidden="true">
-        <span class="h-2 w-2 animate-bounce rounded-full bg-violet-700"></span>
-        <span class="h-2 w-2 animate-bounce rounded-full bg-violet-500" style="animation-delay: 120ms"></span>
-        <span class="h-2 w-2 animate-bounce rounded-full bg-violet-300" style="animation-delay: 240ms"></span>
-      </div>
-    </div>
-  `;
+  const nextTitle = String(title);
+  const nextMessage = String(message);
+  const shouldRender =
+    !overlay.innerHTML.trim() ||
+    overlay.dataset.loadingTitle !== nextTitle ||
+    overlay.dataset.loadingMessage !== nextMessage;
+
+  if (shouldRender) {
+    overlay.innerHTML = renderMascotLoading({ title, message, size: 'lg' });
+    overlay.dataset.loadingTitle = nextTitle;
+    overlay.dataset.loadingMessage = nextMessage;
+  }
+
   overlay.classList.remove('hidden');
+  window.requestAnimationFrame(() => {
+    overlay.classList.remove('is-hidden');
+    overlay.classList.add('is-visible');
+  });
+  playLoadingVideos(overlay);
 }
 
 export function hideGlobalLoading() {
   const overlay = document.getElementById(GLOBAL_LOADING_ID);
-  if (overlay) overlay.classList.add('hidden');
+  if (!overlay) return;
+
+  overlay.classList.remove('is-visible');
+  overlay.classList.add('is-hidden');
+  window.setTimeout(() => {
+    if (overlay.classList.contains('is-hidden')) {
+      overlay.classList.add('hidden');
+    }
+  }, LOADING_EXIT_MS);
 }
 
 export function setButtonLoading(button, isLoading, loadingText = 'Memproses...') {
@@ -62,10 +116,22 @@ export function setButtonLoading(button, isLoading, loadingText = 'Memproses...'
     button.classList.add('cursor-not-allowed', 'opacity-80');
     button.innerHTML = `
       <span class="inline-flex items-center justify-center gap-2">
-        <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-opacity-40 border-t-white"></span>
+        <video
+          class="h-6 w-6 object-contain"
+          autoplay
+          muted
+          loop
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          aria-hidden="true"
+        >
+          <source src="${LOADING_MASCOT_URL}" type="video/webm">
+        </video>
         <span>${escapeHtml(loadingText)}</span>
       </span>
     `;
+    playLoadingVideos(button);
     return;
   }
 
@@ -81,19 +147,7 @@ export function renderPageLoading(
 ) {
   return `
     <main class="min-h-screen bg-gray-50 px-4 py-10 flex items-center justify-center">
-      <section class="w-full max-w-md rounded-2xl border border-violet-100 bg-white p-6 text-center shadow-sm">
-        <img src="${BRAND_LOGO_URL}" alt="NERVA" class="mx-auto mb-3 h-14 w-auto object-contain" />
-        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-50">
-          <div class="h-8 w-8 animate-spin rounded-full border-4 border-violet-100 border-t-violet-700"></div>
-        </div>
-        <h1 class="text-lg font-semibold text-gray-800">${escapeHtml(title)}</h1>
-        <p class="mt-2 text-sm leading-relaxed text-gray-600">${escapeHtml(message)}</p>
-        <div class="mt-4 flex items-center justify-center gap-1.5" aria-hidden="true">
-          <span class="h-2 w-2 animate-bounce rounded-full bg-violet-700"></span>
-          <span class="h-2 w-2 animate-bounce rounded-full bg-violet-500" style="animation-delay: 120ms"></span>
-          <span class="h-2 w-2 animate-bounce rounded-full bg-violet-300" style="animation-delay: 240ms"></span>
-        </div>
-      </section>
+      ${renderMascotLoading({ title, message, size: 'lg' })}
     </main>
   `;
 }

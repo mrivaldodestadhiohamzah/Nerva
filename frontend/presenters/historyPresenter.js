@@ -341,7 +341,7 @@ class HistoryView {
   renderHistory(groupedFeedbacks) {
     const app = document.getElementById('app');
     app.innerHTML = `
-      <main class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-10 xl:py-20">
+      <main class="w-full max-w-6xl mx-auto overflow-x-hidden px-4 py-8 sm:px-6 lg:px-10 xl:py-20">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 class="text-2xl font-bold text-gray-600">Riwayat Anda</h1>
           <div class="w-full sm:w-64 lg:w-48">
@@ -356,7 +356,7 @@ class HistoryView {
             </select>
           </div>
         </div>
-        <div id="historyContainer"></div>
+        <div id="historyContainer" class="w-full min-w-0 overflow-x-hidden"></div>
         ${this.createDeleteModal()}
       </main>
     `;
@@ -390,9 +390,9 @@ class HistoryView {
         hasContent = true;
         const sectionId = `history-${section.key.toLowerCase().replace(/\s/g, '-')}`;
         const sectionHtml = `
-          <div class="${index > 0 ? 'mt-12' : ''}">
-            <h2 class="text-2xl font-semibold text-gray-600 mb-6">${section.label}</h2>
-            <div id="${sectionId}" class="grid gap-4 md:gap-6"></div>
+          <div class="${index > 0 ? 'mt-12' : ''} min-w-0">
+            <h2 class="mb-6 text-xl font-semibold text-gray-600 sm:text-2xl">${section.label}</h2>
+            <div id="${sectionId}" class="grid min-w-0 gap-4 md:gap-6"></div>
           </div>
         `;
         container.insertAdjacentHTML('beforeend', sectionHtml);
@@ -428,7 +428,7 @@ class HistoryView {
 
     data.forEach(item => {
       const card = document.createElement('div');
-      card.className = 'bg-white shadow-md rounded-2xl p-5 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-100';
+      card.className = 'w-full min-w-0 overflow-hidden bg-white shadow-md rounded-2xl p-4 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-100';
       card.dataset.historyId = item.history_id;
 
       const stressPercentage = this.toPercent(item.stress_percent);
@@ -439,19 +439,19 @@ class HistoryView {
       const historyId = escapeHtml(item.history_id);
 
       card.innerHTML = `
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex items-start gap-4 min-w-0">
-            <div class="flex-shrink-0">
+        <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+            <div class="flex flex-shrink-0 justify-center sm:block">
               ${this.createDonutChart(stressPercentage)}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="flex flex-wrap items-center gap-2 mb-2">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${this.getStressLevelClass(stressLevel)}">
+              <div class="mb-2 flex min-w-0 flex-wrap items-center gap-2">
+                <span class="inline-flex max-w-full items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${this.getStressLevelClass(stressLevel)}">
                   Stres ${this.formatStressLevel(stressLevel)}
                 </span>
               </div>
-              <p class="text-sm text-gray-500 mb-2">${this.formatDate(date)}</p>
-              <p class="text-gray-700 text-base sm:text-sm leading-relaxed line-clamp-2 break-words">${escapeHtml(text)}</p>
+              <p class="mb-2 text-sm text-gray-500 break-words">${this.formatDate(date)}</p>
+              <p class="line-clamp-2 break-words text-sm leading-relaxed text-gray-700 sm:text-sm">${escapeHtml(text)}</p>
               ${fusionSummary}
             </div>
           </div>
@@ -565,7 +565,17 @@ class HistoryView {
     if (cancelButton) cancelButton.disabled = isLoading;
     confirmButton.classList.toggle('opacity-75', isLoading);
     confirmButton.classList.toggle('cursor-not-allowed', isLoading);
-    confirmButton.textContent = isLoading ? 'Menghapus...' : 'Hapus';
+    confirmButton.innerHTML = isLoading
+      ? `
+        <span class="inline-flex items-center justify-center gap-2">
+          <video class="h-6 w-6 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-hidden="true">
+            <source src="/assets/loading.webm" type="video/webm">
+          </video>
+          <span>Menghapus...</span>
+        </span>
+      `
+      : 'Hapus';
+    if (isLoading) confirmButton.querySelector('video')?.play?.().catch?.(() => {});
   }
 
   showToast(message, type = 'success') {
@@ -615,13 +625,13 @@ class HistoryView {
     }
 
     return `
-      <div class="relative" style="width: 64px; height: 64px;">
-        <svg width="64" height="64" class="transform -rotate-90">
+      <div class="relative h-16 w-16 shrink-0">
+        <svg width="64" height="64" class="h-full w-full transform -rotate-90">
           <circle cx="32" cy="32" r="${radius}" fill="none" stroke="#e5e7eb" stroke-width="4" />
           <circle cx="32" cy="32" r="${radius}" fill="none" stroke="${strokeColor}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${strokeDasharray}" stroke-dashoffset="${strokeDashoffset}" class="transition-all duration-300 ease-in-out" />
         </svg>
         <div class="absolute inset-0 flex items-center justify-center">
-          <span class="text-gray-700 font-bold text-xs">${percentage.toFixed(1)}%</span>
+          <span class="text-[0.68rem] font-bold leading-none text-gray-700">${percentage.toFixed(1)}%</span>
         </div>
       </div>
     `;
@@ -672,10 +682,10 @@ class HistoryView {
 
     const mlConfidence = fusion?.mlConfidence ?? curhat?.confidence;
     return `
-      <div class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-gray-600">
-        <span class="rounded-md bg-gray-50 px-2 py-1">DASS ${formatPercent(dass21?.stressPercent ?? fusion?.dassStressPercent)}</span>
-        <span class="rounded-md bg-gray-50 px-2 py-1">Curhat ${formatPercent(curhat?.stressPercent ?? fusion?.mlStressPercent)}</span>
-        <span class="rounded-md bg-violet-50 px-2 py-1 text-violet-800">Bobot ${formatPercent(fusion?.dassWeight)}/${formatPercent(fusion?.curhatWeight ?? fusion?.mlWeight)}</span>
+      <div class="mt-3 grid min-w-0 grid-cols-1 gap-2 text-xs text-gray-600 sm:grid-cols-3">
+        <span class="min-w-0 rounded-md bg-gray-50 px-2 py-1 break-words">DASS ${formatPercent(dass21?.stressPercent ?? fusion?.dassStressPercent)}</span>
+        <span class="min-w-0 rounded-md bg-gray-50 px-2 py-1 break-words">Curhat ${formatPercent(curhat?.stressPercent ?? fusion?.mlStressPercent)}</span>
+        <span class="min-w-0 rounded-md bg-violet-50 px-2 py-1 break-words text-violet-800">Bobot ${formatPercent(fusion?.dassWeight)}/${formatPercent(fusion?.curhatWeight ?? fusion?.mlWeight)}</span>
       </div>
     `;
   }

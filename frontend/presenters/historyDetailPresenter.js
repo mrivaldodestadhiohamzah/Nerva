@@ -359,8 +359,8 @@ function displayHistoryDetail(data) {
     const strokeDashoffset = circumference - (stressPercent / 100) * circumference;
 
     donutContainer.innerHTML = `
-      <div class="relative w-28 h-28 flex items-center justify-center">
-        <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 ${svgSize} ${svgSize}">
+      <div class="relative flex h-28 w-28 shrink-0 items-center justify-center sm:h-32 sm:w-32">
+        <svg class="absolute inset-0 h-full w-full transform -rotate-90" viewBox="0 0 ${svgSize} ${svgSize}" aria-hidden="true">
           <!-- Background circle -->
           <circle
             cx="${svgSize / 2}"
@@ -385,7 +385,7 @@ function displayHistoryDetail(data) {
           />
         </svg>
         <div class="relative z-10 text-center">
-          <div class="text-xl font-bold text-gray-800">${stressPercent.toFixed(1)}%</div>
+          <div class="rounded-full bg-white/85 px-1 text-lg font-bold leading-none text-gray-800 sm:text-xl">${stressPercent.toFixed(1)}%</div>
         </div>
       </div>
     `;

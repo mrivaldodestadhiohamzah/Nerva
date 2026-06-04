@@ -5,6 +5,7 @@ import {
   validatePassword,
   validateResetCode,
 } from "../utils/validation.js";
+import { setButtonLoading } from "../utils/loading.js";
 
 let passwordResetToken = "";
 
@@ -237,11 +238,8 @@ function showSuccess(message) {
 
 function showLoading(isLoading, button) {
   if (isLoading) {
-    button.disabled = true;
-    button.textContent = "Memproses...";
+    setButtonLoading(button, true, "Memproses...");
   } else {
-    button.disabled = false;
-    button.textContent = button.id === "send-code-btn" ? "Kirim Kode" : 
-                         button.id === "verify-code-btn" ? "Verifikasi Kode" : "Atur Ulang Kata Sandi";
+    setButtonLoading(button, false);
   }
 }

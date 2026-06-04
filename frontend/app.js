@@ -14,6 +14,7 @@ import {
     setAuthSession,
 } from './config.js';
 import { renderDass21 } from './presenters/dass21Presenter.js';
+import { mascotAssistant } from './components/MascotAssistant.js';
 
 const nervaLogoUrl = new URL('./assets/NervaLogo.png', import.meta.url).href;
 
@@ -371,6 +372,8 @@ window.loadView = function (view, sectionTarget = null) {
         } else {
             resetPageScroll();
         }
+        mascotAssistant.refresh();
+        mascotAssistant.hideSplash();
     });
 };
 
@@ -406,6 +409,7 @@ window.isUserLoggedIn = function () {
 };
 
 window.addEventListener('DOMContentLoaded', () => {
+    mascotAssistant.mount();
     const isLoggedIn = normalizeAuthSession();
     loadView(isLoggedIn ? 'curhat' : 'home');
 });

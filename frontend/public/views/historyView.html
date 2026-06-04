@@ -12,13 +12,6 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-    .animate-spin {
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
 </style>
 
 <body class="bg-gray-50 min-h-screen">
@@ -41,8 +34,10 @@
             </div>
         </div>
 
-        <div id="loadingState" class="flex flex-col sm:flex-row justify-center items-center gap-3 py-12">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div id="loadingState" class="flex flex-col justify-center items-center gap-2 py-12 text-center">
+            <video class="h-24 w-24 object-contain" autoplay muted loop playsinline webkit-playsinline preload="auto" aria-label="Memuat riwayat">
+                <source src="/assets/loading.webm" type="video/webm">
+            </video>
             <span class="text-gray-600">Memuat riwayat...</span>
         </div>
 

@@ -49,7 +49,7 @@ class="h-14 sm:h-16 lg:h-[4.5rem] xl:h-20 w-auto max-w-[8.5rem] sm:max-w-[10rem]
                     </svg>
                 </button>
                 
-                <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+                <div id="profile-dropdown" class="hidden absolute right-0 top-full mt-4 w-56 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl shadow-lg border border-gray-200 z-[80] overflow-hidden">
                     <div class="py-2">
                         <div class="px-4 py-2 border-b border-gray-100">
                             <p class="text-base font-semibold text-gray-900" id="dropdown-username">Memuat...</p>
@@ -71,23 +71,23 @@ class="h-14 sm:h-16 lg:h-[4.5rem] xl:h-20 w-auto max-w-[8.5rem] sm:max-w-[10rem]
         </div>
     </div>
 
-    <div id="logout-modal" tabindex="-1" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full">
-            <div class="p-6">
+    <div id="logout-modal" tabindex="-1" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-6" style="position: fixed; inset: 0; align-items: center; justify-content: center; padding: 24px; z-index: 9999;">
+        <div class="bg-white rounded-xl shadow-xl w-[calc(100%-32px)] max-w-[560px] max-h-[calc(100vh-48px)] overflow-y-auto" style="width: calc(100% - 32px); max-width: 560px; max-height: calc(100vh - 48px); overflow-y: auto;">
+            <div class="p-5 sm:p-6">
                 <div class="text-center">
                     <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-sign-out-alt text-red-600 text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Konfirmasi Keluar</h3>
-                    <p class="text-gray-600 mb-6">Apakah Anda yakin ingin keluar? Anda perlu masuk kembali untuk mengakses akun.</p>
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Konfirmasi Keluar</h3>
+                    <p class="text-sm sm:text-base leading-relaxed text-gray-600 mb-6">Apakah Anda yakin ingin keluar? Anda perlu masuk kembali untuk mengakses akun.</p>
                     
-                    <div class="flex gap-3">
+                    <div class="flex flex-col sm:flex-row gap-3">
                         <button onclick="closeLogoutModal()" 
-                                class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition">
+                                class="flex-1 min-h-11 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                             Batal
                         </button>
                         <button onclick="handleLogout()" 
-                                class="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                                class="flex-1 min-h-11 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
                             Keluar
                         </button>
                     </div>

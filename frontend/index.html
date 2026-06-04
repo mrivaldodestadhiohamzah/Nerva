@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="preload" href="/assets/loading.webm" as="video" type="video/webm" />
   <link rel="stylesheet" href="/styles.css" />
   <link rel="icon" type="image/png" href="/assets/character.svg" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -257,6 +258,9 @@
     function confirmLogout() {
         const modal = document.getElementById('logout-modal');
         if (modal) {
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
             modal.classList.remove('hidden');
             modal.focus();
             const navbarMenu = document.getElementById('navbar-menu');
