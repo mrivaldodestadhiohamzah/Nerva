@@ -40,8 +40,46 @@ function setupStartButton() {
     event.preventDefault();
     const nextView = isCurrentSessionAuthenticated() ? 'curhat' : 'signup';
 
-    if (typeof window.loadView === 'function') {
-      window.loadView(nextView);
-    }
+    scrollToStartTarget(() => {
+      if (typeof window.loadView === 'function') {
+        window.loadView(nextView);
+      }
+    });
   });
+}
+
+function getNavbarOffset() {
+  const navbar = document.getElementById('navbar-container');
+  return navbar ? navbar.offsetHeight : 0;
+}
+
+function refreshScrollAnimations() {
+  if (!window.AOS) return;
+
+  window.requestAnimationFrame(() => {
+    window.AOS.refreshHard();
+    window.setTimeout(() => window.AOS.refreshHard(), 360);
+  });
+}
+
+function scrollToStartTarget(onComplete) {
+  const target = document.getElementById('mulai-sekarang-target');
+
+  if (!target) {
+    onComplete?.();
+    return;
+  }
+
+  const targetTop = target.getBoundingClientRect().top + window.pageYOffset - getNavbarOffset() - 12;
+  window.scrollTo({
+    top: Math.max(targetTop, 0),
+    behavior: 'smooth',
+  });
+
+  refreshScrollAnimations();
+
+  window.setTimeout(() => {
+    refreshScrollAnimations();
+    onComplete?.();
+  }, 620);
 }
