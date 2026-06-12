@@ -38,12 +38,13 @@ function escapeHtml(value = '') {
 
 function toPercent(value) {
   const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : 0;
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.min(100, Math.max(0, numeric));
 }
 
 function formatPercent(value) {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? `${Math.round(numeric)}%` : 'Tidak tersedia';
+  const numeric = toPercent(value);
+  return Number.isFinite(Number(value)) ? `${Math.round(numeric)}%` : 'Tidak tersedia';
 }
 
 function formatConfidence(value) {
@@ -309,10 +310,48 @@ function loadFeedbackResult() {
 
 function displayFeedback(result) {
   const stressPercentEl = document.getElementById("percentage");
-  const chartContainer = document.querySelector('.result-card .flex > :first-child');
+  const chartContainer = document.getElementById("donut-container");
+  const resultDateEl = document.getElementById("result-date");
+  const resultSummaryEl = document.getElementById("result-summary");
+  const stressProgressEl = document.getElementById("stress-progress");
+  const stressLevel = toPercent(
+    result.stress_level?.stress_level ??
+    result.stress_percent ??
+    result.fusion?.fusedStressPercent
+  );
+
+  if (resultDateEl) {
+    const rawDate = result.timestamp || result.created_at || result.date;
+    const date = rawDate ? new Date(rawDate) : null;
+    resultDateEl.textContent = date && Number.isFinite(date.getTime())
+      ? `Dianalisis pada ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      : 'Hasil terbaru';
+  }
+
+  if (resultSummaryEl) {
+    if (stressLevel >= 67) {
+      resultSummaryEl.textContent = 'Hasil ini menunjukkan tekanan yang cukup tinggi. Gunakan informasi ini sebagai bahan refleksi awal dan pertimbangkan untuk mencari dukungan bila terasa berat.';
+    } else if (stressLevel >= 34) {
+      resultSummaryEl.textContent = 'Hasil ini menunjukkan adanya tekanan pada tingkat sedang. Coba perhatikan pola aktivitas, istirahat, dan hal-hal yang sedang membebani pikiran.';
+    } else {
+      resultSummaryEl.textContent = 'Hasil ini menunjukkan tekanan yang relatif rendah. Tetap jaga rutinitas sehat dan gunakan riwayat ini untuk memantau perubahan emosi dari waktu ke waktu.';
+    }
+  }
+
+  if (stressProgressEl) {
+    stressProgressEl.style.width = `${stressLevel}%`;
+    stressProgressEl.className = 'h-full rounded-full transition-all duration-500';
+    if (stressLevel >= 67) {
+      stressProgressEl.classList.add('bg-rose-600');
+    } else if (stressLevel >= 34) {
+      stressProgressEl.classList.add('bg-amber-500');
+    } else {
+      stressProgressEl.classList.add('bg-emerald-500');
+    }
+  }
+
   if (stressPercentEl && chartContainer) {
-    const stressLevel = toPercent(result.stress_level?.stress_level);
-    stressPercentEl.textContent = `${stressLevel}%`;
+    stressPercentEl.textContent = `${Math.round(stressLevel)}%`;
 
     // Create donut chart SVG
     const radius = 50;

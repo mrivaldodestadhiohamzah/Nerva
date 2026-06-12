@@ -1,40 +1,73 @@
-<main class="bg-gray-50 font-sans text-gray-800 min-h-screen w-full m-0 py-5 sm:py-8 px-4 sm:px-8 lg:px-12">
-  <section class="result-card max-w-4xl mx-auto my-4 sm:my-8 bg-white rounded-xl shadow-md overflow-hidden">
-    <div class="soft-section-header px-5 sm:px-6 py-4 text-base font-bold">Hasil Gabungan</div>
-    <div class="flex flex-col md:flex-row items-center gap-5 md:gap-8 p-5 sm:p-8">
-      <div id="donut-container" class="relative flex h-28 w-28 shrink-0 items-center justify-center sm:h-32 sm:w-32">
+<main class="min-h-screen w-full bg-slate-50 px-4 py-6 text-slate-900 sm:px-6 lg:px-10 lg:py-10">
+  <section class="result-card mx-auto max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="grid gap-6 p-5 sm:p-7 lg:grid-cols-[auto_1fr] lg:items-center lg:p-8">
+      <div id="donut-container" class="relative mx-auto flex h-28 w-28 shrink-0 items-center justify-center sm:h-32 sm:w-32">
         <div id="percentage" class="text-xl font-bold text-violet-800">0%</div>
       </div>
-      <div class="min-w-0 flex-1 text-center md:text-left">
-        <h2 id="stress-title" class="text-lg font-semibold mb-1">Tingkat Stres</h2>
-        <p id="user-input" class="text-gray-700 mt-4 leading-relaxed break-words">Tidak ada teks yang diberikan.</p>
+      <div class="min-w-0 text-center lg:text-left">
+        <p id="result-date" class="text-sm font-semibold text-violet-700">Hasil terbaru</p>
+        <h1 id="stress-title" class="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Tingkat Stres</h1>
+        <p id="result-summary" class="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+          Hasil ini membantu kamu memahami kondisi saat ini, bukan diagnosis medis profesional.
+        </p>
+        <div class="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+          <div id="stress-progress" class="h-full w-0 rounded-full bg-violet-700 transition-all duration-500"></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="feedback-sections grid grid-cols-1 gap-6 max-w-5xl mx-auto py-6">
-    <div class="bg-white rounded-xl border border-gray-300 shadow">
-      <h3 class="soft-section-header rounded-t-xl px-4 py-3 text-base font-semibold">Saran</h3>
-      <p id="suggestion-text" class="p-4 text-gray-700"></p>
+  <section class="mx-auto mt-6 grid max-w-5xl gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+    <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <p class="text-sm font-semibold text-violet-700">Curhat yang dianalisis</p>
+      <p id="user-input" class="mt-3 whitespace-pre-line break-words text-base leading-8 text-slate-700">Tidak ada teks yang diberikan.</p>
+    </article>
+
+    <article class="rounded-2xl border border-violet-100 bg-violet-50 p-5 shadow-sm sm:p-6">
+      <p class="text-sm font-semibold text-violet-800">Catatan penting</p>
+      <p class="mt-3 text-sm leading-7 text-violet-950">
+        NERVA memberikan gambaran awal berdasarkan curhat dan DASS-21. Jika tekanan terasa berat atau berlangsung lama, pertimbangkan untuk berbicara dengan orang tepercaya atau tenaga profesional.
+      </p>
+    </article>
+  </section>
+
+  <section class="feedback-sections mx-auto grid max-w-5xl grid-cols-1 gap-5 py-6">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <h3 class="border-b border-slate-100 px-5 py-4 text-base font-semibold text-slate-900">Saran</h3>
+      <p id="suggestion-text" class="p-5 text-base leading-8 text-slate-700"></p>
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-300 shadow">
-      <h3 class="soft-section-header rounded-t-xl px-4 py-3 text-base font-semibold">Rincian Fusion</h3>
-      <div id="fusion-summary" class="p-4"></div>
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <h3 class="border-b border-slate-100 px-5 py-4 text-base font-semibold text-slate-900">Rincian Fusion</h3>
+        <div id="fusion-summary" class="p-5"></div>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <h3 class="border-b border-slate-100 px-5 py-4 text-base font-semibold text-slate-900">Rincian Dynamic Weighting</h3>
+        <div id="fusion-details" class="p-5"></div>
+      </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-300 shadow">
-      <h3 class="soft-section-header rounded-t-xl px-4 py-3 text-base font-semibold">Rincian Dynamic Weighting</h3>
-      <div id="fusion-details" class="p-4"></div>
-    </div>
-
-    <div class="bg-white rounded-xl border border-gray-300 shadow">
-      <h3 class="soft-section-header rounded-t-xl px-4 py-3 text-base font-semibold">Rekomendasi Video</h3>
-      <div id="video-recommendations" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-        <div class="rounded-lg border border-violet-100 bg-violet-50 p-4 text-sm text-gray-600">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <h3 class="border-b border-slate-100 px-5 py-4 text-base font-semibold text-slate-900">Rekomendasi Video</h3>
+      <div id="video-recommendations" class="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+        <div class="rounded-xl border border-violet-100 bg-violet-50 p-4 text-sm leading-6 text-slate-600">
           Rekomendasi video belum tersedia untuk hasil ini.
         </div>
       </div>
+    </div>
+
+    <div class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-end">
+      <button type="button" onclick="loadView('dashboard')" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-violet-100">
+        Kembali ke Dasbor
+      </button>
+      <button type="button" onclick="loadView('history')" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-800 transition hover:bg-violet-100 focus:outline-none focus:ring-4 focus:ring-violet-100">
+        Lihat Riwayat
+      </button>
+      <button type="button" onclick="loadView('curhat')" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-violet-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-900 focus:outline-none focus:ring-4 focus:ring-violet-200">
+        Ulangi Pemeriksaan
+      </button>
     </div>
   </section>
 </main>

@@ -1,40 +1,85 @@
-<main class="bg-gray-50 font-sans text-gray-800 min-h-screen w-full m-0 py-5 sm:py-8 px-4 sm:px-8 lg:px-12 xl:py-16">
-    <section class="result-card max-w-3xl mx-auto my-4 sm:my-8 bg-white rounded-xl shadow-md overflow-hidden">
-        <div class="soft-section-header px-5 sm:px-6 py-4 text-base font-bold">Hasil</div>
-        <div class="flex flex-col items-center gap-5 p-5 sm:p-8 md:flex-row md:items-start">
-            <div id="donut-container" class="relative mx-auto flex h-28 w-28 shrink-0 items-center justify-center sm:h-32 sm:w-32">
-                <div id="percentage" class="text-xl font-bold text-violet-800">0%</div>
-            </div>
-            <div class="min-w-0 flex-1 text-center md:text-left">
-                <h2 id="stress-title" class="text-xl font-semibold mb-1">Rendah</h2>
-                <p id="user-input" class="text-gray-700 leading-relaxed break-words">Tidak ada teks yang diberikan.</p>
-            </div>
+<main class="min-h-screen w-full overflow-x-hidden bg-slate-50 px-4 py-6 text-slate-800 sm:px-6 lg:px-8">
+  <div class="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+        <button
+          type="button"
+          onclick="loadView('history')"
+          class="inline-flex items-center gap-2 rounded-lg border border-violet-100 bg-violet-50 px-3 py-2 text-sm font-semibold text-violet-800 transition-colors hover:bg-violet-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
+        >
+          <i class="fas fa-arrow-left text-xs" aria-hidden="true"></i>
+          Kembali ke Riwayat
+        </button>
+      </div>
+
+      <div class="grid gap-6 p-5 sm:p-6 lg:grid-cols-[auto_1fr] lg:items-center">
+        <div id="donut-container" class="relative mx-auto flex h-28 w-28 shrink-0 items-center justify-center sm:h-32 sm:w-32">
+          <div id="percentage" class="text-xl font-bold text-violet-800">0%</div>
         </div>
+
+        <div class="min-w-0 text-center lg:text-left">
+          <p id="result-date" class="text-sm font-semibold text-violet-700">Detail hasil</p>
+          <h1 id="stress-title" class="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Tingkat Stres</h1>
+          <p id="detail-summary" class="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+            Detail riwayat ini menampilkan ringkasan curhat, hasil analisis, dan rincian penggabungan data.
+          </p>
+          <div class="mt-5 h-3 overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+            <div id="detail-progress" class="h-full w-0 rounded-full bg-violet-700 transition-all duration-500"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section class="feedback-sections grid grid-cols-1 gap-6 max-w-5xl mx-auto py-6">
-        <div class="bg-white rounded-xl border border-gray-300 shadow">
-            <h3 class="soft-section-header rounded-t-xl px-4 py-3 text-base font-semibold">Saran</h3>
-            <p class="p-4 text-gray-700" id="analysis-text"></p>
-        </div>
+    <section class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+      <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-violet-700">Curhat</p>
+        <h2 class="mt-2 text-lg font-bold text-slate-900">Teks yang Dianalisis</h2>
+        <p id="user-input" class="mt-4 max-h-72 overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+          Tidak ada teks yang diberikan.
+        </p>
+      </article>
 
-        <div class="bg-white rounded-xl border border-gray-300 shadow">
-            <h3 class="soft-section-header rounded-t-xl px-4 py-3 text-base font-semibold">Rincian Fusion</h3>
-            <div id="fusion-summary" class="p-4"></div>
-        </div>
-
-        <div class="bg-white rounded-xl border border-gray-300 shadow">
-            <h3 class="soft-section-header rounded-t-xl px-4 py-3 text-base font-semibold">Rincian Dynamic Weighting</h3>
-            <div id="fusion-details" class="p-4"></div>
-        </div>
-
-        <div class="bg-white rounded-xl border border-gray-300 shadow">
-            <h3 class="soft-section-header rounded-t-xl px-4 py-3 text-base font-semibold">Rekomendasi Video</h3>
-            <div id="video-recommendations" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                <div class="rounded-lg border border-violet-100 bg-violet-50 p-4 text-sm text-gray-600">
-                    Rekomendasi video belum tersedia untuk hasil ini.
-                </div>
-            </div>
-        </div>
+      <article class="rounded-2xl border border-violet-100 bg-violet-50/70 p-5 shadow-sm sm:p-6">
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-violet-700">Catatan</p>
+        <h2 class="mt-2 text-lg font-bold text-slate-900">Bukan Diagnosis Medis</h2>
+        <p class="mt-3 text-sm leading-7 text-slate-700">
+          Riwayat ini membantu Anda melihat perubahan kondisi dari waktu ke waktu. Jika tekanan terasa mengganggu aktivitas harian, pertimbangkan berbicara dengan orang terpercaya atau tenaga profesional.
+        </p>
+      </article>
     </section>
+
+    <section class="grid grid-cols-1 gap-6">
+      <article class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+          <h2 class="text-lg font-bold text-slate-900">Saran</h2>
+        </div>
+        <p class="px-5 py-5 text-sm leading-7 text-slate-700 sm:px-6" id="analysis-text"></p>
+      </article>
+
+      <article class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+          <h2 class="text-lg font-bold text-slate-900">Rincian Fusion</h2>
+        </div>
+        <div id="fusion-summary" class="px-5 py-5 sm:px-6"></div>
+      </article>
+
+      <article class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+          <h2 class="text-lg font-bold text-slate-900">Rincian Dynamic Weighting</h2>
+        </div>
+        <div id="fusion-details" class="px-5 py-5 sm:px-6"></div>
+      </article>
+
+      <article class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+          <h2 class="text-lg font-bold text-slate-900">Rekomendasi Video</h2>
+        </div>
+        <div id="video-recommendations" class="grid grid-cols-1 gap-4 px-5 py-5 sm:px-6 md:grid-cols-2">
+          <div class="rounded-xl border border-violet-100 bg-violet-50 p-4 text-sm text-slate-600 md:col-span-2">
+            Rekomendasi video belum tersedia untuk hasil ini.
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
 </main>

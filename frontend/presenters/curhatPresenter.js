@@ -30,9 +30,71 @@ export function renderCurhat() {
       const curhatForm = document.getElementById("curhatForm");
       const curhatInput = document.getElementById("curhatInput");
       const result = document.getElementById("result");
+      const charCounter = document.getElementById("charCounter");
+      const validationMessage = document.getElementById("curhatValidation");
+      const fileInput = document.getElementById("curhatFileInput");
+      const filePreview = document.getElementById("filePreview");
 
       if (!submitButton || !curhatForm || !curhatInput) {
         return;
+      }
+
+      const updateCurhatState = () => {
+        const text = curhatInput.value;
+        const trimmed = text.trim();
+        const validation = validateCurhatText(trimmed);
+        const length = text.length;
+
+        if (charCounter) {
+          charCounter.textContent = `${length}/1000`;
+          charCounter.classList.toggle("text-red-600", length > 1000);
+          charCounter.classList.toggle("text-slate-500", length <= 1000);
+        }
+
+        if (validationMessage) {
+          validationMessage.textContent = validation.isValid
+            ? "Curhat sudah cukup untuk dianalisis."
+            : validation.message;
+          validationMessage.classList.toggle("text-emerald-700", validation.isValid);
+          validationMessage.classList.toggle("text-amber-700", !validation.isValid);
+        }
+
+        submitButton.disabled = !validation.isValid;
+      };
+
+      curhatInput.addEventListener("input", updateCurhatState);
+      updateCurhatState();
+
+      if (fileInput && filePreview) {
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files?.[0];
+          if (!file) {
+            filePreview.classList.add("hidden");
+            filePreview.innerHTML = "";
+            return;
+          }
+
+          const isImage = /^image\/(jpeg|png|webp)$/.test(file.type);
+          filePreview.classList.remove("hidden");
+          filePreview.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate font-medium text-slate-800">${escapeHtml(file.name)}</p>
+                <p class="mt-1 text-xs ${isImage ? 'text-emerald-700' : 'text-red-600'}">
+                  ${isImage ? 'Siap ditinjau sebagai lampiran opsional.' : 'Format file belum didukung.'}
+                </p>
+              </div>
+              <button type="button" id="removeFilePreview" class="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-violet-800 hover:bg-violet-50">
+                Hapus
+              </button>
+            </div>
+          `;
+          document.getElementById("removeFilePreview")?.addEventListener("click", () => {
+            fileInput.value = "";
+            filePreview.classList.add("hidden");
+            filePreview.innerHTML = "";
+          });
+        });
       }
 
       curhatForm.addEventListener("submit", async (event) => {
@@ -105,6 +167,7 @@ export function renderCurhat() {
           
         } finally {
           hideLoading();
+          updateCurhatState();
         }
       });
     })
@@ -121,6 +184,15 @@ function showLoading() {
 
   const submitButton = document.getElementById("submitCurhat");
   setButtonLoading(submitButton, true, 'Menganalisis...');
+}
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function hideLoading() {

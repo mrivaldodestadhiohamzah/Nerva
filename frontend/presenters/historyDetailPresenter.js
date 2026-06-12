@@ -13,12 +13,13 @@ function escapeHtml(value = '') {
 
 function toPercent(value) {
   const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : 0;
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.min(100, Math.max(0, numeric));
 }
 
 function formatPercent(value) {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? `${Math.round(numeric)}%` : 'Tidak tersedia';
+  const numeric = toPercent(value);
+  return Number.isFinite(Number(value)) ? `${Math.round(numeric)}%` : 'Tidak tersedia';
 }
 
 function formatConfidence(value) {
@@ -335,9 +336,42 @@ function displayHistoryDetail(data) {
   const analysisTextElement = document.getElementById("analysis-text");
   const fusionDetailsElement = document.getElementById("fusion-details");
   const fusionSummaryElement = document.getElementById("fusion-summary");
+  const resultDateElement = document.getElementById("result-date");
+  const detailSummaryElement = document.getElementById("detail-summary");
+  const detailProgressElement = document.getElementById("detail-progress");
 
   const stressPercent = toPercent(data.stress_percent);
   if (percentageElement) percentageElement.textContent = `${stressPercent.toFixed(1)}%`;
+
+  if (resultDateElement) {
+    const rawDate = data.created_at || data.timestamp || data.date;
+    const date = rawDate ? new Date(rawDate) : null;
+    resultDateElement.textContent = date && Number.isFinite(date.getTime())
+      ? `Dianalisis pada ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+      : 'Detail hasil';
+  }
+
+  if (detailSummaryElement) {
+    if (stressPercent >= 67) {
+      detailSummaryElement.textContent = 'Riwayat ini menunjukkan tekanan yang cukup tinggi pada saat analisis dilakukan. Gunakan hasil ini sebagai bahan refleksi dan pertimbangkan dukungan bila diperlukan.';
+    } else if (stressPercent >= 34) {
+      detailSummaryElement.textContent = 'Riwayat ini menunjukkan tekanan pada tingkat sedang. Perhatikan pola aktivitas, istirahat, dan hal yang mungkin sedang memengaruhi emosi Anda.';
+    } else {
+      detailSummaryElement.textContent = 'Riwayat ini menunjukkan tekanan yang relatif rendah. Tetap gunakan data ini untuk melihat perubahan emosi dari waktu ke waktu.';
+    }
+  }
+
+  if (detailProgressElement) {
+    detailProgressElement.style.width = `${stressPercent}%`;
+    detailProgressElement.className = 'h-full rounded-full transition-all duration-500';
+    if (stressPercent >= 67) {
+      detailProgressElement.classList.add('bg-rose-600');
+    } else if (stressPercent >= 34) {
+      detailProgressElement.classList.add('bg-amber-500');
+    } else {
+      detailProgressElement.classList.add('bg-emerald-500');
+    }
+  }
 
   if (percentageElement && percentageElement.parentElement) {
     const donutContainer = percentageElement.parentElement;

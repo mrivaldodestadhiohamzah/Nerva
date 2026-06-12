@@ -114,6 +114,11 @@ export function renderDashboard() {
     .then((html) => {
       document.getElementById("app").innerHTML = html;
 
+      const usernameEl = document.getElementById("username");
+      const username = localStorage.getItem("username");
+      if (usernameEl) {
+        usernameEl.textContent = username ? `Halo, ${username}` : 'Dasbor';
+      }
 
       return loadChartJS().then(() => {
         setupNavigation();

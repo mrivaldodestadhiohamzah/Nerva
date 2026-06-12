@@ -13,7 +13,8 @@ function escapeHtml(value = '') {
 
 function formatPercent(value) {
   const numeric = Number(value);
-  return Number.isFinite(numeric) ? `${Math.round(numeric)}%` : 'Tidak tersedia';
+  if (!Number.isFinite(numeric)) return 'Tidak tersedia';
+  return `${Math.round(Math.min(100, Math.max(0, numeric)))}%`;
 }
 
 function formatConfidence(value) {
@@ -127,6 +128,8 @@ class HistoryPresenter {
     this.allHistory = [];
     this.filteredHistory = {};
     this.currentFilter = 'all';
+    this.currentSort = 'newest';
+    this.currentStressFilter = 'all';
     this.pendingDeleteId = null;
     this.isDeleting = false;
   }
@@ -145,10 +148,9 @@ class HistoryPresenter {
     try {
       this.view.showLoading();
       const history = await authenticatedApiCall("/api/history");
-      this.allHistory = sortHistoryNewestFirst(history);
-      const groupedFeedbacks = this.groupFeedbacksByPeriod(this.allHistory);
-      this.filteredHistory = groupedFeedbacks;
-      this.view.renderHistory(groupedFeedbacks);
+      this.allHistory = Array.isArray(history) ? history : [];
+      this.filteredHistory = this.groupFeedbacksByPeriod(this.getFilteredAndSortedHistory());
+      this.view.renderHistory(this.getCurrentHistoryGroups());
       this.view.bindDeleteModal({
         onCancel: () => this.cancelDelete(),
         onConfirm: () => this.confirmDelete(),
@@ -165,9 +167,53 @@ class HistoryPresenter {
     if (filterDropdown) {
       filterDropdown.addEventListener('change', (e) => {
         this.currentFilter = e.target.value;
-        this.filterHistory(e.target.value);
+        this.rerenderCurrentFilter();
       });
     }
+
+    const sortDropdown = document.getElementById('sortDropdown');
+    if (sortDropdown) {
+      sortDropdown.addEventListener('change', (e) => {
+        this.currentSort = e.target.value;
+        this.rerenderCurrentFilter();
+      });
+    }
+
+    const stressDropdown = document.getElementById('stressFilterDropdown');
+    if (stressDropdown) {
+      stressDropdown.addEventListener('change', (e) => {
+        this.currentStressFilter = e.target.value;
+        this.rerenderCurrentFilter();
+      });
+    }
+  }
+
+  sortHistoryItems(items = []) {
+    const newestFirst = sortHistoryNewestFirst(items);
+    return this.currentSort === 'oldest' ? newestFirst.reverse() : newestFirst;
+  }
+
+  matchesStressFilter(item) {
+    if (this.currentStressFilter === 'all') return true;
+
+    const normalized = String(item.stress_level || '').toLowerCase();
+    const stressGroups = {
+      low: ['low', 'rendah'],
+      medium: ['medium', 'sedang'],
+      high: ['high', 'tinggi'],
+    };
+
+    return (stressGroups[this.currentStressFilter] || []).includes(normalized);
+  }
+
+  getFilteredAndSortedHistory() {
+    return this.sortHistoryItems(this.allHistory.filter(item => this.matchesStressFilter(item)));
+  }
+
+  getCurrentHistoryGroups() {
+    this.filteredHistory = this.groupFeedbacksByPeriod(this.getFilteredAndSortedHistory());
+    if (this.currentFilter === 'all') return this.filteredHistory;
+    return this.getFilteredHistory(this.currentFilter, this.filteredHistory);
   }
 
   groupFeedbacksByPeriod(feedbacks) {
@@ -192,7 +238,7 @@ class HistoryPresenter {
       lastYear: [],
     };
 
-    sortHistoryNewestFirst(feedbacks).forEach(feedback => {
+    this.sortHistoryItems(feedbacks).forEach(feedback => {
       const feedbackDate = toJakartaDate(feedback.created_at);
       if (!feedbackDate) return;
 
@@ -220,9 +266,9 @@ class HistoryPresenter {
     return grouped;
   }
 
-  getFilteredHistory(filterValue) {
+  getFilteredHistory(filterValue, sourceHistory = this.filteredHistory) {
     const combineGroups = (targetKey, keys) => ({
-      [targetKey]: sortHistoryNewestFirst(keys.flatMap(key => this.filteredHistory[key] || [])),
+      [targetKey]: this.sortHistoryItems(keys.flatMap(key => sourceHistory[key] || [])),
     });
 
     if (filterValue === 'thisWeek') {
@@ -234,35 +280,29 @@ class HistoryPresenter {
     }
 
     const filtered = {};
-    if (this.filteredHistory[filterValue] && this.filteredHistory[filterValue].length > 0) {
-      filtered[filterValue] = this.filteredHistory[filterValue];
+    if (sourceHistory[filterValue] && sourceHistory[filterValue].length > 0) {
+      filtered[filterValue] = sourceHistory[filterValue];
     }
     return filtered;
   }
 
   filterHistory(filterValue) {
     this.currentFilter = filterValue;
-    if (filterValue === 'all') {
-      this.view.renderHistoryContent(this.filteredHistory);
-    } else {
-      this.view.renderHistoryContent(this.getFilteredHistory(filterValue));
-    }
-    this.setupFilterListener();
-    const filterDropdown = document.getElementById('filterDropdown');
-    if (filterDropdown) {
-      filterDropdown.value = filterValue;
-    }
+    this.rerenderCurrentFilter();
   }
 
   rerenderCurrentFilter() {
-    if (this.currentFilter === 'all') {
-      this.view.renderHistoryContent(this.filteredHistory);
-      return;
-    }
+    this.view.renderHistoryContent(this.getCurrentHistoryGroups());
+    this.syncControls();
+  }
 
-    this.view.renderHistoryContent(this.getFilteredHistory(this.currentFilter));
+  syncControls() {
     const filterDropdown = document.getElementById('filterDropdown');
+    const sortDropdown = document.getElementById('sortDropdown');
+    const stressDropdown = document.getElementById('stressFilterDropdown');
     if (filterDropdown) filterDropdown.value = this.currentFilter;
+    if (sortDropdown) sortDropdown.value = this.currentSort;
+    if (stressDropdown) stressDropdown.value = this.currentStressFilter;
   }
 
   getHistoryItem(historyId) {
@@ -309,7 +349,7 @@ class HistoryPresenter {
       });
 
       this.allHistory = this.allHistory.filter(item => item.history_id !== historyId);
-      this.filteredHistory = this.groupFeedbacksByPeriod(this.allHistory);
+      this.filteredHistory = this.groupFeedbacksByPeriod(this.getFilteredAndSortedHistory());
       this.pendingDeleteId = null;
       this.view.closeDeleteModal();
       this.rerenderCurrentFilter();
@@ -341,22 +381,53 @@ class HistoryView {
   renderHistory(groupedFeedbacks) {
     const app = document.getElementById('app');
     app.innerHTML = `
-      <main class="w-full max-w-6xl mx-auto overflow-x-hidden px-4 py-8 sm:px-6 lg:px-10 xl:py-20">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <h1 class="text-2xl font-bold text-gray-600">Riwayat Anda</h1>
-          <div class="w-full sm:w-64 lg:w-48">
-            <select id="filterDropdown" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-700 focus:border-transparent bg-white text-gray-500 text-sm">
-              <option value="all">Semua Waktu</option>
-              <option value="today">Hari Ini</option>
-              <option value="thisWeek">Minggu Ini</option>
-              <option value="thisMonth">Bulan Ini</option>
-              <option value="lastMonth">Bulan Lalu</option>
-              <option value="earlierThisYear">Awal Tahun Ini</option>
-              <option value="lastYear">Tahun Lalu</option>
-            </select>
-          </div>
+      <main class="min-h-screen w-full overflow-x-hidden bg-slate-50 px-4 py-6 text-slate-800 sm:px-6 sm:py-8 lg:px-8">
+        <div class="mx-auto flex w-full max-w-6xl flex-col gap-6">
+          <section class="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-violet-700">Riwayat pemeriksaan</p>
+                <h1 class="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Riwayat Anda</h1>
+                <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+                  Lihat kembali hasil analisis yang sudah tersimpan, buka detailnya, atau hapus riwayat yang tidak ingin disimpan.
+                </p>
+              </div>
+
+              <div class="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[34rem]">
+                <label class="block">
+                  <span class="mb-1 block text-xs font-semibold text-slate-500">Periode</span>
+                  <select id="filterDropdown" class="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200">
+                    <option value="all">Semua Waktu</option>
+                    <option value="today">Hari Ini</option>
+                    <option value="thisWeek">Minggu Ini</option>
+                    <option value="thisMonth">Bulan Ini</option>
+                    <option value="lastMonth">Bulan Lalu</option>
+                    <option value="earlierThisYear">Awal Tahun Ini</option>
+                    <option value="lastYear">Tahun Lalu</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-xs font-semibold text-slate-500">Urutan</span>
+                  <select id="sortDropdown" class="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200">
+                    <option value="newest">Terbaru dulu</option>
+                    <option value="oldest">Terlama dulu</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="mb-1 block text-xs font-semibold text-slate-500">Tingkat stres</span>
+                  <select id="stressFilterDropdown" class="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200">
+                    <option value="all">Semua tingkat</option>
+                    <option value="low">Rendah</option>
+                    <option value="medium">Sedang</option>
+                    <option value="high">Tinggi</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <div id="historyContainer" class="w-full min-w-0 overflow-x-hidden"></div>
         </div>
-        <div id="historyContainer" class="w-full min-w-0 overflow-x-hidden"></div>
         ${this.createDeleteModal()}
       </main>
     `;
@@ -390,10 +461,13 @@ class HistoryView {
         hasContent = true;
         const sectionId = `history-${section.key.toLowerCase().replace(/\s/g, '-')}`;
         const sectionHtml = `
-          <div class="${index > 0 ? 'mt-12' : ''} min-w-0">
-            <h2 class="mb-6 text-xl font-semibold text-gray-600 sm:text-2xl">${section.label}</h2>
+          <section class="${index > 0 ? 'mt-8' : ''} min-w-0">
+            <div class="mb-4 flex items-center justify-between gap-3">
+              <h2 class="text-lg font-bold text-slate-900 sm:text-xl">${section.label}</h2>
+              <span class="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">${data.length} riwayat</span>
+            </div>
             <div id="${sectionId}" class="grid min-w-0 gap-4 md:gap-6"></div>
-          </div>
+          </section>
         `;
         container.insertAdjacentHTML('beforeend', sectionHtml);
         this.renderSection(sectionId, data);
@@ -402,14 +476,17 @@ class HistoryView {
 
     if (!hasContent) {
       container.innerHTML = `
-        <div class="text-center py-12">
-          <div class="text-gray-400 mb-4">
-            <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="rounded-2xl border border-dashed border-violet-200 bg-white px-5 py-12 text-center shadow-sm">
+          <div class="mb-4 text-violet-300">
+            <svg class="mx-auto h-16 w-16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
           </div>
-          <p class="text-gray-500 text-lg">Tidak ada riwayat pada periode ini.</p>
-          <p class="text-gray-400 text-sm mt-2">Coba pilih periode lain atau periksa kembali nanti.</p>
+          <p class="text-lg font-bold text-slate-900">Tidak ada riwayat pada pilihan ini.</p>
+          <p class="mt-2 text-sm text-slate-500">Coba ubah filter atau mulai pemeriksaan baru dari halaman Cek Mood.</p>
+          <button type="button" onclick="loadView('curhat')" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-violet-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500">
+            Mulai Cek Mood
+          </button>
         </div>
       `;
     }
@@ -428,7 +505,7 @@ class HistoryView {
 
     data.forEach(item => {
       const card = document.createElement('div');
-      card.className = 'w-full min-w-0 overflow-hidden bg-white shadow-md rounded-2xl p-4 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-100';
+      card.className = 'w-full min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:border-violet-200 hover:shadow-md sm:p-5';
       card.dataset.historyId = item.history_id;
 
       const stressPercentage = this.toPercent(item.stress_percent);
@@ -439,7 +516,7 @@ class HistoryView {
       const historyId = escapeHtml(item.history_id);
 
       card.innerHTML = `
-        <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
             <div class="flex flex-shrink-0 justify-center sm:block">
               ${this.createDonutChart(stressPercentage)}
@@ -450,20 +527,18 @@ class HistoryView {
                   Stres ${this.formatStressLevel(stressLevel)}
                 </span>
               </div>
-              <p class="mb-2 text-sm text-gray-500 break-words">${this.formatDate(date)}</p>
-              <p class="line-clamp-2 break-words text-sm leading-relaxed text-gray-700 sm:text-sm">${escapeHtml(text)}</p>
+              <p class="mb-2 text-sm font-medium text-slate-500 break-words">${this.formatDate(date)}</p>
+              <p class="line-clamp-2 break-words text-sm leading-7 text-slate-700">${escapeHtml(text)}</p>
               ${fusionSummary}
             </div>
           </div>
-          <div class="flex flex-shrink-0 items-center gap-2 self-end sm:self-center sm:ml-4">
-            <button type="button" class="delete-history-button inline-flex h-11 w-11 items-center justify-center rounded-full text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 transition" data-history-id="${historyId}" aria-label="Hapus riwayat" title="Hapus riwayat">
+          <div class="flex flex-shrink-0 items-center justify-end gap-2 lg:ml-4">
+            <button type="button" class="detail-button inline-flex min-h-11 items-center justify-center rounded-xl bg-violet-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500" data-history-id="${historyId}" aria-label="Lihat detail riwayat">
+              Detail
+            </button>
+            <button type="button" class="delete-history-button inline-flex h-11 w-11 items-center justify-center rounded-xl text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300" data-history-id="${historyId}" aria-label="Hapus riwayat" title="Hapus riwayat">
               <svg class="h-5 w-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3 0V5a2 2 0 012-2h0a2 2 0 012 2v2"></path>
-              </svg>
-            </button>
-            <button type="button" class="detail-button inline-flex h-11 w-11 items-center justify-center rounded-full text-violet-700 hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300 transition" data-history-id="${historyId}" aria-label="Lihat detail riwayat" title="Lihat detail">
-              <svg class="h-6 w-6 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
               </svg>
             </button>
           </div>
@@ -501,20 +576,20 @@ class HistoryView {
 
   createDeleteModal() {
     return `
-      <div id="history-delete-modal" tabindex="-1" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div id="history-delete-modal" tabindex="-1" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/50 p-6">
         <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
           <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
             <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"></path>
             </svg>
           </div>
-          <h3 class="text-center text-lg font-semibold text-gray-900">Hapus Riwayat</h3>
-          <p class="mt-2 text-center text-sm leading-relaxed text-gray-600">Apakah Anda yakin ingin menghapus riwayat ini?</p>
+          <h3 class="text-center text-lg font-bold text-slate-950">Hapus Riwayat</h3>
+          <p class="mt-2 text-center text-sm leading-7 text-slate-600">Apakah Anda yakin ingin menghapus riwayat ini? Data yang sudah dihapus tidak akan muncul lagi di daftar riwayat Anda.</p>
           <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button type="button" id="history-delete-cancel" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
+            <button type="button" id="history-delete-cancel" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300">
               Batal
             </button>
-            <button type="button" id="history-delete-confirm" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
+            <button type="button" id="history-delete-confirm" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300">
               Hapus
             </button>
           </div>
@@ -655,7 +730,8 @@ class HistoryView {
 
   toPercent(value) {
     const numeric = Number(value);
-    return Number.isFinite(numeric) ? Math.round(numeric * 10) / 10 : 0;
+    if (!Number.isFinite(numeric)) return 0;
+    return Math.min(100, Math.max(0, Math.round(numeric * 10) / 10));
   }
 
   formatStressLevel(level) {
@@ -682,10 +758,10 @@ class HistoryView {
 
     const mlConfidence = fusion?.mlConfidence ?? curhat?.confidence;
     return `
-      <div class="mt-3 grid min-w-0 grid-cols-1 gap-2 text-xs text-gray-600 sm:grid-cols-3">
-        <span class="min-w-0 rounded-md bg-gray-50 px-2 py-1 break-words">DASS ${formatPercent(dass21?.stressPercent ?? fusion?.dassStressPercent)}</span>
-        <span class="min-w-0 rounded-md bg-gray-50 px-2 py-1 break-words">Curhat ${formatPercent(curhat?.stressPercent ?? fusion?.mlStressPercent)}</span>
-        <span class="min-w-0 rounded-md bg-violet-50 px-2 py-1 break-words text-violet-800">Bobot ${formatPercent(fusion?.dassWeight)}/${formatPercent(fusion?.curhatWeight ?? fusion?.mlWeight)}</span>
+      <div class="mt-3 grid min-w-0 grid-cols-1 gap-2 text-xs text-slate-600 sm:grid-cols-3">
+        <span class="min-w-0 rounded-lg bg-slate-50 px-2.5 py-1.5 break-words">DASS ${formatPercent(dass21?.stressPercent ?? fusion?.dassStressPercent)}</span>
+        <span class="min-w-0 rounded-lg bg-slate-50 px-2.5 py-1.5 break-words">Curhat ${formatPercent(curhat?.stressPercent ?? fusion?.mlStressPercent)}</span>
+        <span class="min-w-0 rounded-lg bg-violet-50 px-2.5 py-1.5 break-words font-semibold text-violet-800">Bobot ${formatPercent(fusion?.dassWeight)}/${formatPercent(fusion?.curhatWeight ?? fusion?.mlWeight)}</span>
       </div>
     `;
   }
